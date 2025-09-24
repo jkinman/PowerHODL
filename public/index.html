@@ -755,6 +755,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Optimization Results -->
+                    <div id="optimizationResults" style="display: none; margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="color: #ffffff; margin: 0;">All Iteration Results</h4>
+                            <button onclick="clearOptimizationResults()" style="background: #2d2d30; color: #b3b3b3; border: 1px solid #555; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">Clear</button>
+                        </div>
+                        <div id="optimizationResultsList" style="background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30; max-height: 300px; overflow-y: auto; padding: 10px;">
+                            <div style="color: #666; text-align: center; padding: 20px;">No optimization runs yet</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -767,6 +778,7 @@
         let ratioChart = null;
         let zscoreChart = null;
         let isLoading = false;
+        let optimizationResults = []; // Store all optimization iteration results
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
@@ -1574,11 +1586,14 @@
         async function runOptimizationWithIterations(iterations) {
             isOptimizing = true;
             document.getElementById('optimizationProgress').style.display = 'block';
+            document.getElementById('optimizationResults').style.display = 'block';
             document.getElementById('totalIterations').textContent = iterations;
             document.getElementById('currentIteration').textContent = '0';
             document.getElementById('progressBar').style.width = '0%';
             document.getElementById('bestBtcGrowth').textContent = '--';
             
+            // Clear previous optimization results for this run
+            const currentRunResults = [];
             let bestResult = null;
             let bestParams = null;
 
@@ -1589,7 +1604,7 @@
                 // Generate random parameters around current values
                 const baseParams = getBacktestParameters();
                 const randomParams = {
-                    zScoreThreshold: baseParams.zScoreThreshold + (Math.random() - 0.5) * 1.0,
+                    zScoreThreshold: Math.max(0.5, Math.min(3.0, baseParams.zScoreThreshold + (Math.random() - 0.5) * 1.0)),
                     rebalancePercent: Math.max(10, Math.min(90, baseParams.rebalancePercent + (Math.random() - 0.5) * 40)),
                     lookbackWindow: Math.max(5, Math.min(60, baseParams.lookbackWindow + Math.floor((Math.random() - 0.5) * 20))),
                     transactionCost: Math.max(0, Math.min(5, baseParams.transactionCost + (Math.random() - 0.5) * 2)),
@@ -1606,10 +1621,26 @@
                         txCost: randomParams.transactionCost.toFixed(2) + '%'
                     });
 
-                    // For demonstration, use simulated results since API might not be available
+                    // Get deterministic result for these specific parameters
                     const btcGrowth = simulateBacktestPerformance(randomParams);
                     
+                    // Store this iteration's result
+                    const iterationResult = {
+                        iteration: i + 1,
+                        timestamp: new Date().toLocaleTimeString(),
+                        parameters: { ...randomParams },
+                        btcGrowth: btcGrowth,
+                        isBest: false
+                    };
+                    
+                    currentRunResults.push(iterationResult);
+                    
                     if (!bestResult || btcGrowth > (bestResult.btcGrowthPercent || bestResult)) {
+                        // Mark previous best as no longer best
+                        currentRunResults.forEach(result => result.isBest = false);
+                        // Mark this as the new best
+                        iterationResult.isBest = true;
+                        
                         bestResult = { btcGrowthPercent: btcGrowth };
                         bestParams = randomParams;
                         document.getElementById('bestBtcGrowth').textContent = `+${btcGrowth.toFixed(2)}%`;
@@ -1618,13 +1649,19 @@
                         console.log(`📊 Iteration ${i + 1}: +${btcGrowth.toFixed(2)}% BTC growth (not better than +${((bestResult.btcGrowthPercent || bestResult)).toFixed(2)}%)`);
                     }
                     
+                    // Update the results display in real-time
+                    updateOptimizationResultsDisplay(currentRunResults);
+                    
                 } catch (error) {
                     console.error(`❌ Optimization iteration ${i + 1} failed:`, error);
                 }
 
-                // Small delay to prevent overwhelming the server
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Small delay to show progress
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
+            
+            // Store all results from this run
+            optimizationResults = [...optimizationResults, ...currentRunResults];
 
             // Apply best parameters and run final backtest
             if (bestParams) {
@@ -1791,12 +1828,16 @@
             
             const params = getBacktestParameters();
             
-            // Generate realistic mock results based on parameters
+            // Generate DETERMINISTIC mock results based on parameters
+            const btcGrowthPercent = simulateBacktestPerformance(params);
+            const winRate = 55 + (params.zScoreThreshold * 10) + (params.rebalancePercent * 0.3);
+            const maxDrawdown = Math.max(2, 15 - (params.zScoreThreshold * 3) - (params.lookbackWindow * 0.2));
+            
             const mockResults = {
                 performance: {
-                    btcGrowthPercent: 5 + (Math.random() * 10), // 5-15% growth
-                    winRate: 60 + (Math.random() * 20), // 60-80% win rate
-                    maxDrawdown: 5 + (Math.random() * 10) // 5-15% max drawdown
+                    btcGrowthPercent: btcGrowthPercent,
+                    winRate: Math.min(95, Math.max(45, winRate)), // Cap between 45-95%
+                    maxDrawdown: Math.min(20, Math.max(2, maxDrawdown)) // Cap between 2-20%
                 },
                 trades: generateMockTrades(params),
                 portfolio: generateMockPortfolio(params)
@@ -1809,17 +1850,25 @@
         function generateMockTrades(params) {
             const trades = [];
             const baseDate = new Date();
-            const numTrades = Math.floor(Math.random() * 20) + 10; // 10-30 trades
+            
+            // Deterministic number of trades based on parameters
+            const baseTrades = 15;
+            const tradeFrequency = (2.0 - params.zScoreThreshold) * 8; // Higher threshold = fewer trades
+            const numTrades = Math.max(5, Math.min(30, Math.floor(baseTrades + tradeFrequency)));
             
             for (let i = 0; i < numTrades; i++) {
                 const date = new Date(baseDate);
                 date.setDate(date.getDate() - (numTrades - i) * 3); // Space trades 3 days apart
                 
+                // Deterministic trade generation based on index and parameters
+                const seed = i * 73 + params.zScoreThreshold * 100 + params.rebalancePercent;
+                const pseudoRandom = Math.sin(seed) * 0.5; // -0.5 to 0.5
+                
                 trades.push({
                     date: date.toISOString(),
-                    action: Math.random() > 0.5 ? 'BUY_ETH' : 'SELL_ETH',
-                    btcGrowth: (Math.random() - 0.4) * 0.01, // Slight positive bias
-                    zScore: (Math.random() - 0.5) * 4 // -2 to +2 range
+                    action: pseudoRandom > 0 ? 'BUY_ETH' : 'SELL_ETH',
+                    btcGrowth: (pseudoRandom * 0.01) + 0.002, // Slight positive bias
+                    zScore: pseudoRandom * 3 // -1.5 to +1.5 range
                 });
             }
             
@@ -1835,12 +1884,20 @@
             let currentBTC = startingBTC;
             let currentETH = startingETH;
             
+            // Base performance from simulation
+            const basePerformance = simulateBacktestPerformance(params);
+            const performanceMultiplier = (basePerformance + 5) / 100; // Convert to multiplier
+            
             for (let i = 0; i < 30; i++) {
                 const date = new Date(baseDate);
                 date.setDate(date.getDate() - (30 - i));
                 
-                // Simulate portfolio growth over time
-                const growthFactor = 1 + (Math.random() - 0.45) * 0.02; // Slight upward bias
+                // Deterministic growth factor based on parameters and day
+                const seed = i * 41 + params.zScoreThreshold * 50 + params.rebalancePercent * 2;
+                const dailyVariation = Math.sin(seed) * 0.01; // -1% to +1% daily variation
+                const progressFactor = i / 30; // How far through the test period
+                const growthFactor = 1 + (performanceMultiplier * progressFactor / 30) + dailyVariation;
+                
                 const totalBTC = currentBTC + (currentETH * 0.037); // Convert ETH to BTC
                 const hodlBTC = startingBTC + (startingETH * 0.037); // HODL baseline
                 
@@ -1852,16 +1909,20 @@
                     ethBalance: currentETH
                 });
                 
-                // Small random changes to simulate trading
-                if (Math.random() > 0.8) { // 20% chance of trade
-                    if (Math.random() > 0.5) {
+                // Deterministic trading simulation
+                const tradeSeed = i * 137 + params.lookbackWindow * 3;
+                const tradeChance = Math.sin(tradeSeed);
+                
+                if (tradeChance > 0.6) { // ~20% chance of trade, but deterministic
+                    const tradDirection = Math.sin(tradeSeed * 2);
+                    if (tradDirection > 0) {
                         // Buy ETH with BTC
-                        const btcToTrade = currentBTC * 0.1;
+                        const btcToTrade = currentBTC * (params.rebalancePercent / 100) * 0.2;
                         currentBTC -= btcToTrade;
                         currentETH += btcToTrade / 0.037;
                     } else {
                         // Sell ETH for BTC
-                        const ethToTrade = currentETH * 0.1;
+                        const ethToTrade = currentETH * (params.rebalancePercent / 100) * 0.2;
                         currentETH -= ethToTrade;
                         currentBTC += ethToTrade * 0.037;
                     }
@@ -1898,12 +1959,107 @@
             if (params.transactionCost > 3) txCostScore -= (params.transactionCost - 3) * 1.5; // High costs hurt
             score += Math.max(0, txCostScore);
             
-            // Add some randomness to simulate real market variability
-            const randomFactor = (Math.random() - 0.5) * 4;
-            score += randomFactor;
+            // Add deterministic "market variability" based on parameter combination
+            const marketSeed = params.zScoreThreshold * 100 + params.rebalancePercent + params.lookbackWindow * 2;
+            const marketFactor = Math.sin(marketSeed) * 2; // -2 to +2 range
+            score += marketFactor;
             
             // Ensure reasonable bounds (-5% to +20% BTC growth)
             return Math.max(-5, Math.min(20, score));
+        }
+
+        function updateOptimizationResultsDisplay(results) {
+            const resultsList = document.getElementById('optimizationResultsList');
+            
+            if (!results || results.length === 0) {
+                resultsList.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">No optimization runs yet</div>';
+                return;
+            }
+            
+            // Sort by BTC growth (best first)
+            const sortedResults = [...results].sort((a, b) => b.btcGrowth - a.btcGrowth);
+            
+            const resultsHtml = sortedResults.map(result => `
+                <div onclick="inspectIteration(${result.iteration - 1}, ${JSON.stringify(result.parameters).replace(/"/g, '&quot;')})" 
+                     style="
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: center; 
+                        padding: 8px 12px; 
+                        margin-bottom: 6px; 
+                        background: ${result.isBest ? 'rgba(0, 212, 170, 0.1)' : '#2d2d30'}; 
+                        border: 1px solid ${result.isBest ? '#00d4aa' : '#444'}; 
+                        border-radius: 4px; 
+                        cursor: pointer;
+                        font-size: 13px;
+                        transition: background 0.2s;
+                     "
+                     onmouseover="this.style.background='${result.isBest ? 'rgba(0, 212, 170, 0.2)' : '#3a3a3a'}'"
+                     onmouseout="this.style.background='${result.isBest ? 'rgba(0, 212, 170, 0.1)' : '#2d2d30'}'">
+                    
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #b3b3b3; min-width: 60px;">
+                            #${result.iteration}
+                            ${result.isBest ? '<span style="color: #00d4aa; margin-left: 4px;">🏆</span>' : ''}
+                        </span>
+                        <span style="color: ${result.btcGrowth > 0 ? '#00d4aa' : '#ff6b6b'}; font-weight: bold; min-width: 80px;">
+                            ${result.btcGrowth > 0 ? '+' : ''}${result.btcGrowth.toFixed(2)}%
+                        </span>
+                        <span style="color: #666; font-size: 11px;">
+                            Z:${result.parameters.zScoreThreshold.toFixed(2)}, 
+                            R:${result.parameters.rebalancePercent.toFixed(0)}%, 
+                            L:${result.parameters.lookbackWindow}d
+                        </span>
+                    </div>
+                    
+                    <span style="color: #666; font-size: 11px;">
+                        ${result.timestamp}
+                    </span>
+                </div>
+            `).join('');
+            
+            resultsList.innerHTML = resultsHtml;
+        }
+
+        function inspectIteration(index, parameters) {
+            console.log(`🔍 Inspecting iteration ${index + 1}:`, parameters);
+            
+            // Apply these parameters to the sliders
+            applyParameters(parameters);
+            
+            // Show in the "Latest Run Details" what parameters are loaded
+            const latestRunContent = document.getElementById('latestRunContent');
+            latestRunContent.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #fbbf24; font-weight: bold; margin-bottom: 8px;">
+                        🔍 Inspecting Iteration ${index + 1}
+                    </div>
+                    <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 10px;">
+                        Click "Run Single Backtest" to see full results with these parameters.
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                    <div style="color: #b3b3b3;">Z-Score Threshold:</div>
+                    <div style="color: #fbbf24;">±${parameters.zScoreThreshold.toFixed(3)}</div>
+                    
+                    <div style="color: #b3b3b3;">Rebalance %:</div>
+                    <div style="color: #fbbf24;">${parameters.rebalancePercent.toFixed(0)}%</div>
+                    
+                    <div style="color: #b3b3b3;">Lookback Window:</div>
+                    <div style="color: #fbbf24;">${parameters.lookbackWindow} days</div>
+                    
+                    <div style="color: #b3b3b3;">Transaction Cost:</div>
+                    <div style="color: #fbbf24;">${parameters.transactionCost.toFixed(2)}%</div>
+                </div>
+            `;
+        }
+
+        function clearOptimizationResults() {
+            optimizationResults = [];
+            document.getElementById('optimizationResultsList').innerHTML = 
+                '<div style="color: #666; text-align: center; padding: 20px;">No optimization runs yet</div>';
+            document.getElementById('optimizationResults').style.display = 'none';
         }
     </script>
 </body>
