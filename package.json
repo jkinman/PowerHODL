@@ -1,0 +1,47 @@
+{
+  "name": "eth-btc-arbitrage-trader",
+  "version": "1.0.0",
+  "description": "Automated ETH/BTC ratio trading system",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "collect": "node src/dataCollector.js",
+    "analyze": "node src/analyzer.js",
+    "optimize": "node src/megaOptimizer.js",
+    "backtest": "node src/cryptoOnlyBacktest.js",
+    "strategy": "node -e \"import('./src/strategy.js').then(m => console.log('Strategy loaded:', m.default.name))\"",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "crypto",
+    "trading",
+    "ethereum",
+    "bitcoin",
+    "arbitrage",
+    "mean-reversion"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "ccxt": "^4.1.0",
+    "axios": "^1.6.0",
+    "fs-extra": "^11.1.1",
+    "csv-writer": "^1.6.0",
+    "csv-parser": "^3.0.0",
+    "simple-statistics": "^7.8.3",
+    "chart.js": "^3.9.1",
+    "chartjs-node-canvas": "^4.1.6",
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "dotenv": "^16.3.1",
+    "moment": "^2.29.4",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

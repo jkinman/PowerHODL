@@ -1,0 +1,1318 @@
+{
+  "timestamp": "2025-09-24T03:54:34.917Z",
+  "meanReversion": {
+    "meanRatio": 0.03060232876712329,
+    "stdRatio": 0.007047045493913176,
+    "currentZScore": -2.0081700973986125,
+    "autocorr1Day": 0.926072350599192,
+    "halfLifeDays": 9.025011363641172,
+    "extremeDeviationsCount": 53,
+    "timeInExtremesPercent": 15.773809523809524,
+    "maxZScore": 4.324989161706068,
+    "minZScore": -3.0184650566952618
+  },
+  "opportunities": [
+    {
+      "entryDate": "2024-10-24T00:00:00.000Z",
+      "exitDate": "2024-10-30T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.03719,
+      "exitPrice": 0.03675,
+      "durationDays": 6,
+      "pnlPercent": -1.1831137402527638,
+      "entryZScore": -2.915727217628981,
+      "exitZScore": -1.2717349233791326
+    },
+    {
+      "entryDate": "2024-11-05T00:00:00.000Z",
+      "exitDate": "2024-11-06T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.03492,
+      "exitPrice": 0.03601,
+      "durationDays": 1,
+      "pnlPercent": 3.121420389461629,
+      "entryZScore": -1.6074570462051259,
+      "exitZScore": -0.746087361753714
+    },
+    {
+      "entryDate": "2024-11-10T00:00:00.000Z",
+      "exitDate": "2024-11-11T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.03962,
+      "exitPrice": 0.03803,
+      "durationDays": 1,
+      "pnlPercent": 4.013124684502779,
+      "entryZScore": 1.732686527864105,
+      "exitZScore": 0.7025193441267169
+    },
+    {
+      "entryDate": "2024-12-01T00:00:00.000Z",
+      "exitDate": "2024-12-02T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.03814,
+      "exitPrice": 0.03802,
+      "durationDays": 1,
+      "pnlPercent": 0.3146303093864763,
+      "entryZScore": 1.5683637076014338,
+      "exitZScore": 1.408974595118098
+    },
+    {
+      "entryDate": "2024-12-07T00:00:00.000Z",
+      "exitDate": "2024-12-08T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.04003,
+      "exitPrice": 0.0396,
+      "durationDays": 1,
+      "pnlPercent": 1.0741943542343237,
+      "entryZScore": 1.5093895067970469,
+      "exitZScore": 1.184144355909371
+    },
+    {
+      "entryDate": "2024-12-18T00:00:00.000Z",
+      "exitDate": "2024-12-23T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.0362,
+      "exitPrice": 0.03608,
+      "durationDays": 5,
+      "pnlPercent": -0.33149171270718797,
+      "entryZScore": -2.0154686509483626,
+      "exitZScore": -0.8407923633772155
+    },
+    {
+      "entryDate": "2025-01-05T00:00:00.000Z",
+      "exitDate": "2025-01-06T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.03696,
+      "exitPrice": 0.03606,
+      "durationDays": 1,
+      "pnlPercent": 2.4350649350649296,
+      "entryZScore": 1.601076131741916,
+      "exitZScore": 0.4884004542018109
+    },
+    {
+      "entryDate": "2025-01-14T00:00:00.000Z",
+      "exitDate": "2025-01-15T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.03341,
+      "exitPrice": 0.03433,
+      "durationDays": 1,
+      "pnlPercent": 2.7536665668961304,
+      "entryZScore": -1.875821891745248,
+      "exitZScore": -0.940645523081288
+    },
+    {
+      "entryDate": "2025-01-19T00:00:00.000Z",
+      "exitDate": "2025-01-20T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.03173,
+      "exitPrice": 0.03211,
+      "durationDays": 1,
+      "pnlPercent": 1.1976047904191565,
+      "entryZScore": -1.9089235285057142,
+      "exitZScore": -1.4709112811996943
+    },
+    {
+      "entryDate": "2025-01-22T00:00:00.000Z",
+      "exitDate": "2025-01-23T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.03128,
+      "exitPrice": 0.03213,
+      "durationDays": 1,
+      "pnlPercent": 2.717391304347815,
+      "entryZScore": -1.5290405843919395,
+      "exitZScore": -0.9671322369184353
+    },
+    {
+      "entryDate": "2025-01-29T00:00:00.000Z",
+      "exitDate": "2025-01-30T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.03002,
+      "exitPrice": 0.03101,
+      "durationDays": 1,
+      "pnlPercent": 3.297801465689533,
+      "entryZScore": -1.717042992649299,
+      "exitZScore": -0.9106395292087971
+    },
+    {
+      "entryDate": "2025-02-03T00:00:00.000Z",
+      "exitDate": "2025-02-10T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02843,
+      "exitPrice": 0.02732,
+      "durationDays": 7,
+      "pnlPercent": -3.904326415758002,
+      "entryZScore": -2.348424394624549,
+      "exitZScore": -1.3670932782929341
+    },
+    {
+      "entryDate": "2025-02-23T00:00:00.000Z",
+      "exitDate": "2025-02-24T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.02929,
+      "exitPrice": 0.02747,
+      "durationDays": 1,
+      "pnlPercent": 6.213724820757934,
+      "entryZScore": 2.457930168848034,
+      "exitZScore": -0.6973132728995177
+    },
+    {
+      "entryDate": "2025-03-01T00:00:00.000Z",
+      "exitDate": "2025-03-02T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02576,
+      "exitPrice": 0.02672,
+      "durationDays": 1,
+      "pnlPercent": 3.7267080745341574,
+      "entryZScore": -2.677830525611069,
+      "exitZScore": -1.2771673708827571
+    },
+    {
+      "entryDate": "2025-03-04T00:00:00.000Z",
+      "exitDate": "2025-03-08T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02488,
+      "exitPrice": 0.02556,
+      "durationDays": 4,
+      "pnlPercent": 2.7331189710610935,
+      "entryZScore": -2.262343599231233,
+      "exitZScore": -0.8580645265974185
+    },
+    {
+      "entryDate": "2025-03-11T00:00:00.000Z",
+      "exitDate": "2025-03-13T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02319,
+      "exitPrice": 0.02299,
+      "durationDays": 2,
+      "pnlPercent": -0.8624407072013748,
+      "entryZScore": -1.7822424115596331,
+      "exitZScore": -1.4635266193706484
+    },
+    {
+      "entryDate": "2025-03-29T00:00:00.000Z",
+      "exitDate": "2025-04-01T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02212,
+      "exitPrice": 0.02237,
+      "durationDays": 3,
+      "pnlPercent": 1.1301989150090426,
+      "entryZScore": -2.3912900035893547,
+      "exitZScore": -1.1311109340113812
+    },
+    {
+      "entryDate": "2025-04-03T00:00:00.000Z",
+      "exitDate": "2025-04-09T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02185,
+      "exitPrice": 0.02021,
+      "durationDays": 6,
+      "pnlPercent": -7.505720823798638,
+      "entryZScore": -1.5744523080748132,
+      "exitZScore": -1.3970316856413432
+    },
+    {
+      "entryDate": "2025-04-11T00:00:00.000Z",
+      "exitDate": "2025-04-12T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.01878,
+      "exitPrice": 0.01928,
+      "durationDays": 1,
+      "pnlPercent": 2.662406815761432,
+      "entryZScore": -1.8671437447692503,
+      "exitZScore": -1.3776039049678779
+    },
+    {
+      "entryDate": "2025-05-09T00:00:00.000Z",
+      "exitDate": "2025-05-15T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.02278,
+      "exitPrice": 0.02456,
+      "durationDays": 6,
+      "pnlPercent": -7.813871817383655,
+      "entryZScore": 3.5174569710559553,
+      "exitZScore": 1.3380834862259017
+    },
+    {
+      "entryDate": "2025-06-11T00:00:00.000Z",
+      "exitDate": "2025-06-12T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.02551,
+      "exitPrice": 0.02502,
+      "durationDays": 1,
+      "pnlPercent": 1.9208153665229353,
+      "entryZScore": 1.9422216119076627,
+      "exitZScore": 1.0660959036770075
+    },
+    {
+      "entryDate": "2025-06-21T00:00:00.000Z",
+      "exitDate": "2025-06-23T00:00:00.000Z",
+      "position": "Long ETH",
+      "entryPrice": 0.02248,
+      "exitPrice": 0.02289,
+      "durationDays": 2,
+      "pnlPercent": 1.8238434163701096,
+      "entryZScore": -2.453281236335071,
+      "exitZScore": -1.2691406948634558
+    },
+    {
+      "entryDate": "2025-07-09T00:00:00.000Z",
+      "exitDate": "2025-07-13T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.02489,
+      "exitPrice": 0.02495,
+      "durationDays": 4,
+      "pnlPercent": -0.24106066693451597,
+      "entryZScore": 2.8326453362700943,
+      "exitZScore": 1.4114738996426508
+    },
+    {
+      "entryDate": "2025-07-16T00:00:00.000Z",
+      "exitDate": "2025-07-23T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.02843,
+      "exitPrice": 0.03055,
+      "durationDays": 7,
+      "pnlPercent": -7.456911712979249,
+      "entryZScore": 2.902697975941619,
+      "exitZScore": 1.1615716969293453
+    },
+    {
+      "entryDate": "2025-08-08T00:00:00.000Z",
+      "exitDate": "2025-08-15T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.03436,
+      "exitPrice": 0.03784,
+      "durationDays": 7,
+      "pnlPercent": -10.128055878928977,
+      "entryZScore": 2.698312400919629,
+      "exitZScore": 1.4579053270255962
+    },
+    {
+      "entryDate": "2025-08-23T00:00:00.000Z",
+      "exitDate": "2025-08-25T00:00:00.000Z",
+      "position": "Short ETH",
+      "entryPrice": 0.0414,
+      "exitPrice": 0.03975,
+      "durationDays": 2,
+      "pnlPercent": 3.9855072463768084,
+      "entryZScore": 1.7902400666580993,
+      "exitZScore": 0.9020706832509756
+    }
+  ],
+  "backtest": {
+    "strategyReturnPercent": -100,
+    "buyHoldReturnPercent": -4.565483476132176,
+    "excessReturnPercent": -95.43451652386783,
+    "numTrades": 164,
+    "sharpeRatio": -0.19136254871335603,
+    "maxDrawdownPercent": 1498.281018459226,
+    "finalValue": -3.5903327371107134e-20,
+    "portfolio": [
+      {
+        "date": "2025-06-17T00:00:00.000Z",
+        "ethAmount": -1.06363068354871e-15,
+        "btcAmount": -3.706536174223887e-14,
+        "ratio": 0.024,
+        "totalBtcValue": -8.138330689010179e-14,
+        "ethPercent": 0.5445581758886855,
+        "deviation": 0.04455817588868549,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-18T00:00:00.000Z",
+        "ethAmount": -1.06363068354871e-15,
+        "btcAmount": -3.706536174223887e-14,
+        "ratio": 0.02407,
+        "totalBtcValue": -8.125442213063562e-14,
+        "ethPercent": 0.543835759699976,
+        "deviation": 0.043835759699975996,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-19T00:00:00.000Z",
+        "ethAmount": -1.06363068354871e-15,
+        "btcAmount": -3.706536174223887e-14,
+        "ratio": 0.02409,
+        "totalBtcValue": -8.121773548855311e-14,
+        "ethPercent": 0.5436297069934573,
+        "deviation": 0.04362970699345725,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-20T00:00:00.000Z",
+        "ethAmount": -9.635416684670127e-16,
+        "btcAmount": 4.301711931275895e-15,
+        "ratio": 0.02329,
+        "totalBtcValue": -3.7069763743563633e-14,
+        "ethPercent": 0.5519954799759365,
+        "deviation": 0.051995479975936454,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-06-21T00:00:00.000Z",
+        "ethAmount": -4.3394971420230635e-16,
+        "btcAmount": 2.3581412775657084e-14,
+        "ratio": 0.02248,
+        "totalBtcValue": 4.27759986630182e-15,
+        "ethPercent": 1.1115575829656743,
+        "deviation": 0.6115575829656743,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-06-22T00:00:00.000Z",
+        "ethAmount": 4.2651047974327785e-17,
+        "btcAmount": 2.162589826289665e-14,
+        "ratio": 0.02206,
+        "totalBtcValue": 2.355930932247633e-14,
+        "ethPercent": -5.030936378621561,
+        "deviation": 5.530936378621561,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-06-23T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02289,
+        "totalBtcValue": 2.1615790783307647e-14,
+        "ethPercent": 0.07932601371566851,
+        "deviation": 0.4206739862843315,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-06-24T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02309,
+        "totalBtcValue": 2.151414747227413e-14,
+        "ethPercent": 0.5407175423882405,
+        "deviation": 0.040717542388240546,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-25T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02253,
+        "totalBtcValue": 2.180329630009305e-14,
+        "ethPercent": 0.5468084096785991,
+        "deviation": 0.04680840967859912,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-26T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02258,
+        "totalBtcValue": 2.1776896331590825e-14,
+        "ethPercent": 0.5462590089041369,
+        "deviation": 0.04625900890413692,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-27T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02263,
+        "totalBtcValue": 2.1750613022251225e-14,
+        "ethPercent": 0.5457107110324021,
+        "deviation": 0.045710711032402096,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-28T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02271,
+        "totalBtcValue": 2.170880045510807e-14,
+        "ethPercent": 0.5448357201992303,
+        "deviation": 0.04483572019923032,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-29T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02307,
+        "totalBtcValue": 2.1524232497803203e-14,
+        "ethPercent": 0.5409327359060834,
+        "deviation": 0.04093273590608337,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-06-30T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.0232,
+        "totalBtcValue": 2.1458990641918247e-14,
+        "ethPercent": 0.5395370318496675,
+        "deviation": 0.0395370318496675,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-01T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02276,
+        "totalBtcValue": 2.1682816865629554e-14,
+        "ethPercent": 0.5442902743807779,
+        "deviation": 0.04429027438077793,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-02T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02362,
+        "totalBtcValue": 2.125311737988096e-14,
+        "ethPercent": 0.5350766502686473,
+        "deviation": 0.03507665026864726,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-03T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02364,
+        "totalBtcValue": 2.1243496358852707e-14,
+        "ethPercent": 0.5348660899517986,
+        "deviation": 0.03486608995179863,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-04T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02322,
+        "totalBtcValue": 2.1449018273169382e-14,
+        "ethPercent": 0.5393229471556684,
+        "deviation": 0.03932294715566842,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-05T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02326,
+        "totalBtcValue": 2.142912498383373e-14,
+        "ethPercent": 0.5388952870477806,
+        "deviation": 0.03889528704778056,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-06T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02354,
+        "totalBtcValue": 2.129176494778374e-14,
+        "ethPercent": 0.5359205519730103,
+        "deviation": 0.03592055197301025,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-07T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02348,
+        "totalBtcValue": 2.132092345142078e-14,
+        "ethPercent": 0.536555227216041,
+        "deviation": 0.036555227216040986,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-08T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02401,
+        "totalBtcValue": 2.10683985846455e-14,
+        "ethPercent": 0.5310003992572488,
+        "deviation": 0.031000399257248845,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-09T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02489,
+        "totalBtcValue": 2.0672864286013976e-14,
+        "ethPercent": 0.5220270211335529,
+        "deviation": 0.022027021133552926,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-10T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02544,
+        "totalBtcValue": 2.043955113472312e-14,
+        "ethPercent": 0.5165710607166062,
+        "deviation": 0.01657106071660619,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-11T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02516,
+        "totalBtcValue": 2.0557054098589012e-14,
+        "ethPercent": 0.5193343133165127,
+        "deviation": 0.019334313316512697,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-12T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02506,
+        "totalBtcValue": 2.059965578882884e-14,
+        "ethPercent": 0.5203283673387217,
+        "deviation": 0.020328367338721676,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-13T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02495,
+        "totalBtcValue": 2.064691207656742e-14,
+        "ethPercent": 0.5214262313006067,
+        "deviation": 0.021426231300606724,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-14T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02516,
+        "totalBtcValue": 2.0557054098589012e-14,
+        "ethPercent": 0.5193343133165127,
+        "deviation": 0.019334313316512697,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-15T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02666,
+        "totalBtcValue": 1.9956379853984673e-14,
+        "ethPercent": 0.5048665841808507,
+        "deviation": 0.00486658418085073,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-16T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02843,
+        "totalBtcValue": 1.932910945253517e-14,
+        "ethPercent": 0.4887984597142472,
+        "deviation": 0.01120154028575282,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-17T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.02917,
+        "totalBtcValue": 1.9089426600058142e-14,
+        "ethPercent": 0.48237991996795804,
+        "deviation": 0.017620080032041963,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-18T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03007,
+        "totalBtcValue": 1.881381900218607e-14,
+        "ethPercent": 0.47479719437399936,
+        "deviation": 0.025202805626000635,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-19T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03049,
+        "totalBtcValue": 1.8690770318662512e-14,
+        "ethPercent": 0.47133957798294945,
+        "deviation": 0.028660422017050546,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-20T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03203,
+        "totalBtcValue": 1.826720061266723e-14,
+        "ethPercent": 0.4590812936254751,
+        "deviation": 0.04091870637452488,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-21T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03205,
+        "totalBtcValue": 1.8261967458166023e-14,
+        "ethPercent": 0.45892628780972533,
+        "deviation": 0.04107371219027467,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-22T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03123,
+        "totalBtcValue": 1.8482023029271248e-14,
+        "ethPercent": 0.4653685633418724,
+        "deviation": 0.03463143665812762,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-23T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03055,
+        "totalBtcValue": 1.867346812594073e-14,
+        "ethPercent": 0.47084973943531455,
+        "deviation": 0.02915026056468545,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-24T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03132,
+        "totalBtcValue": 1.8457307648510373e-14,
+        "ethPercent": 0.4646526615551455,
+        "deviation": 0.03534733844485449,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-25T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03167,
+        "totalBtcValue": 1.8362527636088275e-14,
+        "ethPercent": 0.46188941303111225,
+        "deviation": 0.03811058696888775,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-26T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03173,
+        "totalBtcValue": 1.8346489582930508e-14,
+        "ethPercent": 0.46141900989706547,
+        "deviation": 0.03858099010293453,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-27T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03243,
+        "totalBtcValue": 1.8163763917160854e-14,
+        "ethPercent": 0.4560009384865217,
+        "deviation": 0.04399906151347832,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-28T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03216,
+        "totalBtcValue": 1.8233301454972473e-14,
+        "ethPercent": 0.4580756233922091,
+        "deviation": 0.041924376607790914,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-29T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03217,
+        "totalBtcValue": 1.823070517554118e-14,
+        "ethPercent": 0.4579984466127725,
+        "deviation": 0.0420015533872275,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-30T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03233,
+        "totalBtcValue": 1.818938313582053e-14,
+        "ethPercent": 0.45676714538883967,
+        "deviation": 0.04323285461116033,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-07-31T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03194,
+        "totalBtcValue": 1.8290830910348387e-14,
+        "ethPercent": 0.45978011753979514,
+        "deviation": 0.04021988246020486,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-01T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03079,
+        "totalBtcValue": 1.8604933685396764e-14,
+        "ethPercent": 0.4689005243677027,
+        "deviation": 0.031099475632297313,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-02T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03014,
+        "totalBtcValue": 1.8793072738302895e-14,
+        "ethPercent": 0.47421740648356614,
+        "deviation": 0.02578259351643386,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-03T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03063,
+        "totalBtcValue": 1.8650503979413916e-14,
+        "ethPercent": 0.4701982029335814,
+        "deviation": 0.02980179706641861,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-04T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03233,
+        "totalBtcValue": 1.818938313582053e-14,
+        "ethPercent": 0.45676714538883967,
+        "deviation": 0.04323285461116033,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-05T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03165,
+        "totalBtcValue": 1.836788716664853e-14,
+        "ethPercent": 0.46204642728699746,
+        "deviation": 0.03795357271300254,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-06T00:00:00.000Z",
+        "ethAmount": 2.6860774672438437e-16,
+        "btcAmount": 9.881070524487886e-15,
+        "ratio": 0.03203,
+        "totalBtcValue": 1.826720061266723e-14,
+        "ethPercent": 0.4590812936254751,
+        "deviation": 0.04091870637452488,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-07T00:00:00.000Z",
+        "ethAmount": 2.986947697495053e-16,
+        "btcAmount": 9.049320272494439e-16,
+        "ratio": 0.03328,
+        "totalBtcValue": 9.88013544520333e-15,
+        "ethPercent": 0.44959050703999504,
+        "deviation": 0.050409492960004965,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-08T00:00:00.000Z",
+        "ethAmount": 1.6502791775554473e-16,
+        "btcAmount": -3.893948057514036e-15,
+        "ratio": 0.03436,
+        "totalBtcValue": 9.08959909760257e-16,
+        "ethPercent": 0.9057168775860943,
+        "deviation": 0.4057168775860943,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-09T00:00:00.000Z",
+        "ethAmount": 1.1427932904143079e-17,
+        "btcAmount": -4.20191617219723e-15,
+        "ratio": 0.03659,
+        "totalBtcValue": -3.88959223384951e-15,
+        "ethPercent": 7.318844029894791,
+        "deviation": 6.818844029894791,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-10T00:00:00.000Z",
+        "ethAmount": -6.906259905256234e-17,
+        "btcAmount": -2.261247047750861e-15,
+        "ratio": 0.03563,
+        "totalBtcValue": -4.199574273475316e-15,
+        "ethPercent": -0.08263963655717527,
+        "deviation": 0.5826396365571753,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-11T00:00:00.000Z",
+        "ethAmount": -6.906259905256234e-17,
+        "btcAmount": -2.261247047750861e-15,
+        "ratio": 0.03559,
+        "totalBtcValue": -4.201752781174922e-15,
+        "ethPercent": 0.4618324386237318,
+        "deviation": 0.0381675613762682,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-12T00:00:00.000Z",
+        "ethAmount": -7.772375454824039e-17,
+        "btcAmount": -2.2689071046777035e-16,
+        "ratio": 0.03821,
+        "totalBtcValue": -2.261011478545247e-15,
+        "ethPercent": 0.4442328900013837,
+        "deviation": 0.05576710999861628,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-13T00:00:00.000Z",
+        "ethAmount": -4.326515100082118e-17,
+        "btcAmount": 8.95657447803467e-16,
+        "ratio": 0.03851,
+        "totalBtcValue": -2.278208955053144e-16,
+        "ethPercent": 0.8989425365734536,
+        "deviation": 0.3989425365734536,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-14T00:00:00.000Z",
+        "ethAmount": -4.456886465275145e-18,
+        "btcAmount": 1.0105519865822452e-15,
+        "ratio": 0.03844,
+        "totalBtcValue": 8.946080098581259e-16,
+        "ethPercent": 4.89641982990636,
+        "deviation": 4.39641982990636,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-15T00:00:00.000Z",
+        "ethAmount": 1.686985226667973e-17,
+        "btcAmount": 5.641458511408148e-16,
+        "ratio": 0.03784,
+        "totalBtcValue": 1.0099664712961988e-15,
+        "ethPercent": -0.1319292404329345,
+        "deviation": 0.6319292404329345,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-16T00:00:00.000Z",
+        "ethAmount": 1.9058422478604215e-17,
+        "btcAmount": 5.815445837354744e-17,
+        "ratio": 0.03767,
+        "totalBtcValue": 5.640855037307074e-16,
+        "ethPercent": 0.442531729033027,
+        "deviation": 0.05746827096697299,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-17T00:00:00.000Z",
+        "ethAmount": 1.0645475040125471e-17,
+        "btcAmount": -2.2102488065969736e-16,
+        "ratio": 0.0381,
+        "totalBtcValue": 5.838391304438321e-17,
+        "ethPercent": 0.8958506306118139,
+        "deviation": 0.3958506306118139,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-18T00:00:00.000Z",
+        "ethAmount": 1.2310447136027559e-18,
+        "btcAmount": -2.5393436975140865e-16,
+        "ratio": 0.03711,
+        "totalBtcValue": -2.2076151301191106e-16,
+        "ethPercent": 4.357110865461908,
+        "deviation": 3.857110865461908,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-19T00:00:00.000Z",
+        "ethAmount": -3.964062381657642e-18,
+        "btcAmount": -1.4400774354923156e-16,
+        "ratio": 0.03611,
+        "totalBtcValue": -2.5378515650014933e-16,
+        "ethPercent": -0.15507221492238865,
+        "deviation": 0.6550722149223887,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-20T00:00:00.000Z",
+        "ethAmount": -4.713827608932472e-18,
+        "btcAmount": -1.977568540040579e-17,
+        "ratio": 0.03795,
+        "totalBtcValue": -1.439872165975724e-16,
+        "ethPercent": 0.4204047824459896,
+        "deviation": 0.07959521755401039,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-21T00:00:00.000Z",
+        "ethAmount": -2.7302867027185034e-18,
+        "btcAmount": 5.2860805545095984e-17,
+        "ratio": 0.03756,
+        "totalBtcValue": -1.983053371790996e-17,
+        "ethPercent": 0.8638759624312426,
+        "deviation": 0.36387596243124265,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-22T00:00:00.000Z",
+        "ethAmount": -2.7549635639148946e-19,
+        "btcAmount": 5.946626477372589e-17,
+        "ratio": 0.04132,
+        "totalBtcValue": 5.279887957548074e-17,
+        "ethPercent": 4.9998088455942415,
+        "deviation": 4.4998088455942415,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-23T00:00:00.000Z",
+        "ethAmount": 1.0918348027613693e-18,
+        "btcAmount": 3.305901436806057e-17,
+        "ratio": 0.0414,
+        "totalBtcValue": 5.943183569079896e-17,
+        "ethPercent": -0.12600415006498408,
+        "deviation": 0.6260041500649841,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-24T00:00:00.000Z",
+        "ethAmount": 1.2418248087540612e-18,
+        "btcAmount": 3.565277220073061e-18,
+        "ratio": 0.04211,
+        "totalBtcValue": 3.305529880055421e-17,
+        "ethPercent": 0.43955588787367106,
+        "deviation": 0.06044411212632894,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-25T00:00:00.000Z",
+        "ethAmount": 6.923223416456107e-19,
+        "btcAmount": -1.3837249183406874e-17,
+        "ratio": 0.03975,
+        "totalBtcValue": 3.579665071828614e-18,
+        "ethPercent": 0.897567616016421,
+        "deviation": 0.397567616016421,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-26T00:00:00.000Z",
+        "ethAmount": 6.202151438730917e-20,
+        "btcAmount": -1.5328129005493625e-17,
+        "ratio": 0.04116,
+        "totalBtcValue": -1.3821289491710604e-17,
+        "ethPercent": 5.638668929381964,
+        "deviation": 5.138668929381964,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-27T00:00:00.000Z",
+        "ethAmount": -2.7911901380241883e-19,
+        "btcAmount": -8.429231714729566e-18,
+        "ratio": 0.04051,
+        "totalBtcValue": -1.5319357950286683e-17,
+        "ethPercent": -0.11096651461767829,
+        "deviation": 0.6109665146176783,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-08-28T00:00:00.000Z",
+        "ethAmount": -2.7911901380241883e-19,
+        "btcAmount": -8.429231714729566e-18,
+        "ratio": 0.04008,
+        "totalBtcValue": -1.539327896528892e-17,
+        "ethPercent": 0.45240830535605403,
+        "deviation": 0.04759169464394597,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-29T00:00:00.000Z",
+        "ethAmount": -2.7911901380241883e-19,
+        "btcAmount": -8.429231714729566e-18,
+        "ratio": 0.04024,
+        "totalBtcValue": -1.536558891657894e-17,
+        "ethPercent": 0.45142150030873757,
+        "deviation": 0.04857849969126243,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-30T00:00:00.000Z",
+        "ethAmount": -2.7911901380241883e-19,
+        "btcAmount": -8.429231714729566e-18,
+        "ratio": 0.04019,
+        "totalBtcValue": -1.537421837316248e-17,
+        "ethPercent": 0.45172941413114126,
+        "deviation": 0.04827058586885874,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-08-31T00:00:00.000Z",
+        "ethAmount": -3.105571487884817e-19,
+        "btcAmount": -7.754639614120053e-19,
+        "ratio": 0.04058,
+        "totalBtcValue": -8.42842474969396e-18,
+        "ethPercent": 0.44933876721968863,
+        "deviation": 0.05066123278031137,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-01T00:00:00.000Z",
+        "ethAmount": -1.7073007735079705e-19,
+        "btcAmount": 3.544226669481169e-18,
+        "ratio": 0.03949,
+        "totalBtcValue": -7.791482950870014e-19,
+        "ethPercent": 0.9102437070352597,
+        "deviation": 0.4102437070352597,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-02T00:00:00.000Z",
+        "ethAmount": -1.658413020138661e-20,
+        "btcAmount": 3.966433036431453e-18,
+        "ratio": 0.0389,
+        "totalBtcValue": 3.540105781897093e-18,
+        "ethPercent": 5.195734765025282,
+        "deviation": 4.695734765025282,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-03T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03984,
+        "totalBtcValue": 3.964154382337878e-18,
+        "ethPercent": -0.1172532438847846,
+        "deviation": 0.6172532438847846,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-04T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03881,
+        "totalBtcValue": 4.011206114712525e-18,
+        "ethPercent": 0.4537145894993201,
+        "deviation": 0.04628541050067991,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-05T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03893,
+        "totalBtcValue": 4.005596221871835e-18,
+        "ethPercent": 0.4529495092357109,
+        "deviation": 0.04705049076428908,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-06T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03878,
+        "totalBtcValue": 4.012614012651464e-18,
+        "ethPercent": 0.45390626358037817,
+        "deviation": 0.046093736419621834,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-07T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03874,
+        "totalBtcValue": 4.014494601844724e-18,
+        "ethPercent": 0.4541620810819751,
+        "deviation": 0.04583791891802491,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-08T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03844,
+        "totalBtcValue": 4.028723773719329e-18,
+        "ethPercent": 0.4560899426084037,
+        "deviation": 0.04391005739159631,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-09T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03865,
+        "totalBtcValue": 4.0187401596728726e-18,
+        "ethPercent": 0.45473872608948707,
+        "deviation": 0.045261273910512934,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-10T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03816,
+        "totalBtcValue": 4.042206187517218e-18,
+        "ethPercent": 0.45790410549926075,
+        "deviation": 0.04209589450073925,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-11T00:00:00.000Z",
+        "ethAmount": 7.063197757383483e-20,
+        "btcAmount": 2.191263378978569e-18,
+        "ratio": 0.03862,
+        "totalBtcValue": 4.020159742879005e-18,
+        "ethPercent": 0.45493126663436667,
+        "deviation": 0.04506873336563333,
+        "rebalanced": false
+      },
+      {
+        "date": "2025-09-12T00:00:00.000Z",
+        "ethAmount": 7.981135944353203e-20,
+        "btcAmount": 2.2619884786819417e-19,
+        "ratio": 0.04062,
+        "totalBtcValue": 2.1910279823716904e-18,
+        "ethPercent": 0.4424423242588555,
+        "deviation": 0.05755767574114451,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-13T00:00:00.000Z",
+        "ethAmount": 4.449441482626694e-20,
+        "btcAmount": -8.780644220244785e-19,
+        "ratio": 0.04026,
+        "totalBtcValue": 2.2711229993942963e-19,
+        "ethPercent": 0.8975825726289097,
+        "deviation": 0.3975825726289097,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-14T00:00:00.000Z",
+        "ethAmount": 4.7520430592255936e-21,
+        "btcAmount": -9.960081377499925e-19,
+        "ratio": 0.03994,
+        "totalBtcValue": -8.770285919506536e-19,
+        "ethPercent": 4.7211323524318445,
+        "deviation": 4.2211323524318445,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-15T00:00:00.000Z",
+        "ethAmount": -1.7133790310553665e-20,
+        "btcAmount": -5.58564046131662e-19,
+        "ratio": 0.03922,
+        "totalBtcValue": -9.95427644055009e-19,
+        "ethPercent": -0.13849751391388354,
+        "deviation": 0.6384975139138835,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-16T00:00:00.000Z",
+        "ethAmount": -1.932822769022028e-20,
+        "btcAmount": -5.699401544902453e-20,
+        "ratio": 0.03854,
+        "totalBtcValue": -5.585048532855653e-19,
+        "ethPercent": 0.44318195046224507,
+        "deviation": 0.05681804953775493,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-17T00:00:00.000Z",
+        "ethAmount": -1.0796006651411024e-20,
+        "btcAmount": 2.1665208330237664e-19,
+        "ratio": 0.03942,
+        "totalBtcValue": -5.721921683488933e-20,
+        "ethPercent": 0.8958650663653831,
+        "deviation": 0.3958650663653831,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-18T00:00:00.000Z",
+        "ethAmount": -1.1623490542934568e-21,
+        "btcAmount": 2.4605570239993337e-19,
+        "ratio": 0.03919,
+        "totalBtcValue": 2.1639637465577782e-19,
+        "ethPercent": 4.68289787728135,
+        "deviation": 4.18289787728135,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-19T00:00:00.000Z",
+        "ethAmount": 4.167286672522471e-21,
+        "btcAmount": 1.380632648614309e-19,
+        "ratio": 0.03864,
+        "totalBtcValue": 2.4591229882940373e-19,
+        "ethPercent": -0.13928282428651736,
+        "deviation": 0.6392828242865174,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-20T00:00:00.000Z",
+        "ethAmount": 4.7559588825070814e-21,
+        "btcAmount": 1.5217940476546786e-20,
+        "ratio": 0.03872,
+        "totalBtcValue": 1.3804745707022141e-19,
+        "ethPercent": 0.438057867426189,
+        "deviation": 0.06194213257381098,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-21T00:00:00.000Z",
+        "ethAmount": 2.6736179384155894e-21,
+        "btcAmount": -5.402656693442715e-20,
+        "ratio": 0.03858,
+        "totalBtcValue": 1.5274053553276046e-20,
+        "ethPercent": 0.8901177655608474,
+        "deviation": 0.39011776556084743,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-22T00:00:00.000Z",
+        "ethAmount": 3.323674884287755e-22,
+        "btcAmount": -6.287917086881738e-20,
+        "ratio": 0.03727,
+        "totalBtcValue": -5.3961341825920263e-20,
+        "ethPercent": 4.050642974503328,
+        "deviation": 3.5506429745033277,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-23T00:00:00.000Z",
+        "ethAmount": -1.0014049347062617e-21,
+        "btcAmount": -3.59079583477061e-20,
+        "ratio": 0.03718,
+        "totalBtcValue": -6.284192646783147e-20,
+        "ethPercent": -0.16572963800633972,
+        "deviation": 0.6657296380063398,
+        "rebalanced": true
+      },
+      {
+        "date": "2025-09-24T00:00:00.000Z",
+        "ethAmount": -1.1669884250469757e-21,
+        "btcAmount": -4.465061610143351e-21,
+        "ratio": 0.03712,
+        "totalBtcValue": -3.5903327371107134e-20,
+        "ethPercent": 0.4289942823185242,
+        "deviation": 0.07100571768147579,
+        "rebalanced": true
+      }
+    ]
+  },
+  "summary": {
+    "totalOpportunities": 26,
+    "avgReturn": 0.21900880578661236,
+    "winRate": 0.6538461538461539
+  }
+}
