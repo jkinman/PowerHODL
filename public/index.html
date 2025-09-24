@@ -1979,6 +1979,10 @@
                             };
                             
                             const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
+                            console.log(`🌐 API URL for iteration ${i + 1}:`, apiUrl ? apiUrl : 'Same domain (production)');
+                            console.log(`🔗 Full URL:`, `${apiUrl}/api/backtest`);
+                            console.log(`📊 API Parameters:`, apiParams);
+                            
                             const response = await fetch(`${apiUrl}/api/backtest`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -2050,11 +2054,15 @@
                         } catch (error) {
                             console.error(`🚨 REAL API FAILED for iteration ${i + 1}:`, {
                                 error: error.message,
+                                stack: error.stack,
                                 url: `${apiUrl}/api/backtest`,
                                 params: apiParams,
-                                timestamp: new Date().toISOString()
+                                timestamp: new Date().toISOString(),
+                                hostname: window.location.hostname,
+                                fullUrl: window.location.href
                             });
                             console.error(`📉 Falling back to SIMULATION - THIS IS WHY YOU'RE SEEING +617% RESULTS!`);
+                            console.error(`❌ The API should be working! Check the browser Network tab for HTTP errors.`);
                             btcGrowth = simulateBacktestPerformance(randomParams);
                         }
                     } else {
