@@ -29,7 +29,14 @@ class BacktestResults {
      */
     extractParametersFromResult(result) {
         if (result.parameters) {
-            return result.parameters;
+            // Add backtest period from data info if available
+            const params = { ...result.parameters };
+            if (result.dataInfo?.totalDays) {
+                params.backtestPeriod = `${result.dataInfo.totalDays} days`;
+            } else if (result.portfolioEvolution?.fullDataRange?.totalDays) {
+                params.backtestPeriod = `${result.portfolioEvolution.fullDataRange.totalDays} days`;
+            }
+            return params;
         }
 
         // Fallback to current form values
@@ -134,10 +141,15 @@ class BacktestResults {
      * Generate portfolio composition section
      */
     generatePortfolioSection(result) {
-        const finalBTC = result.finalBTC || result.portfolio?.btc;
-        const finalETH = result.finalETH || result.portfolio?.eth;
-        const initialBTC = result.initialBTC || result.startingBTC;
-        const initialETH = result.initialETH || result.startingETH;
+        // Extract portfolio data from correct API response structure
+        const cryptoData = result.cryptoAccumulation || {};
+        const initialBTC = parseFloat(cryptoData.startingBTC || 0);
+        const finalBTC = parseFloat(cryptoData.strategyBTC || 0);
+        const buyHoldBTC = parseFloat(cryptoData.buyHoldBTC || 0);
+        
+        // ETH data not provided by current API - calculate estimates if needed
+        const estimatedInitialETH = result.startingETH || 0.5; // From form inputs
+        const estimatedFinalETH = result.finalETH || 'N/A'; // Not calculated by API yet
 
         return `
             <div>
@@ -146,19 +158,24 @@ class BacktestResults {
                     <div style="color: #b3b3b3;">Initial BTC:</div>
                     <div style="color: #ffffff;">${this.formatValue(initialBTC, 6)} BTC</div>
                     
-                    <div style="color: #b3b3b3;">Final BTC:</div>
+                    <div style="color: #b3b3b3;">Strategy BTC:</div>
                     <div style="color: #00d4aa; font-weight: bold;">${this.formatValue(finalBTC, 6)} BTC</div>
                     
-                    <div style="color: #b3b3b3;">Initial ETH:</div>
-                    <div style="color: #ffffff;">${this.formatValue(initialETH, 4)} ETH</div>
+                    <div style="color: #b3b3b3;">Buy & Hold BTC:</div>
+                    <div style="color: #fbbf24;">${this.formatValue(buyHoldBTC, 6)} BTC</div>
                     
-                    <div style="color: #b3b3b3;">Final ETH:</div>
-                    <div style="color: #ffffff;">${this.formatValue(finalETH, 4)} ETH</div>
-                    
-                    <div style="color: #b3b3b3;">BTC Difference:</div>
-                    <div style="color: ${(finalBTC - initialBTC) > 0 ? '#00d4aa' : '#ff6b6b'};">
+                    <div style="color: #b3b3b3;">BTC Gained:</div>
+                    <div style="color: ${(finalBTC - initialBTC) > 0 ? '#00d4aa' : '#ff6b6b'}; font-weight: bold;">
                         ${(finalBTC - initialBTC) > 0 ? '+' : ''}${this.formatValue(finalBTC - initialBTC, 6)} BTC
                     </div>
+                    
+                    <div style="color: #b3b3b3;">vs Buy & Hold:</div>
+                    <div style="color: ${(finalBTC - buyHoldBTC) > 0 ? '#00d4aa' : '#ff6b6b'}; font-weight: bold;">
+                        ${(finalBTC - buyHoldBTC) > 0 ? '+' : ''}${this.formatValue(finalBTC - buyHoldBTC, 6)} BTC
+                    </div>
+                    
+                    <div style="color: #b3b3b3;">Crypto Gained:</div>
+                    <div style="color: #8b5cf6;">${cryptoData.cryptoGained || 'N/A'}</div>
                 </div>
             </div>
         `;
@@ -216,7 +233,10 @@ class BacktestResults {
     generateAutoNotes(result) {
         const notes = [];
         
-        if (result.btcGrowth > 10) {
+        // Check for data inconsistencies
+        if (result.btcGrowth > 50 && result.totalTrades === 0) {
+            notes.push("⚠️ Data inconsistency: High growth with no trades detected. This may indicate a calculation error in the backtest engine.");
+        } else if (result.btcGrowth > 10) {
             notes.push("Strong BTC accumulation performance detected.");
         } else if (result.btcGrowth < 0) {
             notes.push("Strategy underperformed vs holding. Consider parameter adjustment.");
@@ -224,12 +244,21 @@ class BacktestResults {
 
         if (result.totalTrades > 50) {
             notes.push("High-frequency trading detected. Monitor transaction costs.");
-        } else if (result.totalTrades < 5) {
+        } else if (result.totalTrades < 5 && result.totalTrades > 0) {
             notes.push("Low trade frequency. Consider more aggressive thresholds.");
+        } else if (result.totalTrades === 0) {
+            notes.push("No trades executed. Z-score threshold may be too high for current market conditions.");
         }
 
         if (result.winRate > 70) {
             notes.push("Excellent win rate suggests good market timing.");
+        }
+
+        // Add data quality notes
+        if (result.dataSource === 'Real Historical') {
+            notes.push("Analysis based on real market data.");
+        } else {
+            notes.push("⚠️ Analysis based on simulated data - results may not reflect real trading performance.");
         }
 
         return notes.join(' ');
@@ -305,3 +334,4 @@ class BacktestResults {
 
 // Export for global use
 window.BacktestResults = BacktestResults;
+
