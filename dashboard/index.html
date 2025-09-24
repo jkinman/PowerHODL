@@ -3,512 +3,684 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETH/BTC Trading System - Live Dashboard</title>
-    <!-- Cirrus UI CSS Framework -->
-    <link rel="stylesheet" href="https://unpkg.com/cirrus-ui@0.7.1/dist/cirrus.min.css">
+    <title>ETH/BTC Trading System</title>
     
-    <!-- React and other dependencies -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Chart.js for professional charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
     
     <style>
-        /* Custom styles to complement Cirrus UI */
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .trading-header {
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #0a0a0b;
+            color: #ffffff;
+            overflow-x: auto;
+        }
+
+        .header {
+            background: #1a1a1b;
+            border-bottom: 1px solid #2d2d30;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 18px;
+            color: #00d4aa;
+        }
+
+        .nav-item {
+            color: #b3b3b3;
+            font-size: 14px;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item.active {
+            background: #2d2d30;
+            color: #ffffff;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #b3b3b3;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .status-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-right: 8px;
+            background: #00d4aa;
         }
 
-        .status-online {
-            background: #10b981;
+        .main-container {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        .status-offline {
-            background: #ef4444;
+        .balance-section {
+            margin-bottom: 32px;
         }
 
-        .metric-value {
-            font-size: 2.5rem !important;
-            font-weight: 700 !important;
-            color: #3b82f6 !important;
+        .balance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
-        .signal-card {
-            background: linear-gradient(135deg, var(--signal-from), var(--signal-to));
-            color: white;
-            text-align: center;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+        .balance-title {
+            font-size: 14px;
+            color: #b3b3b3;
+            font-weight: 400;
         }
 
-        .signal-buy {
-            --signal-from: #10b981;
-            --signal-to: #059669;
+        .total-balance {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
 
-        .signal-sell {
-            --signal-from: #ef4444;
-            --signal-to: #dc2626;
+        .balance-change {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .signal-hold {
-            --signal-from: #3b82f6;
-            --signal-to: #2563eb;
+        .positive {
+            color: #00d4aa;
         }
 
-        .allocation-grid {
+        .negative {
+            color: #ff6b6b;
+        }
+
+        .assets-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
         }
 
-        .allocation-item {
-            background: #f8fafc;
-            padding: 1rem;
-            border-radius: 6px;
-            text-align: center;
+        .asset-card {
+            background: #1a1a1b;
+            border: 1px solid #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .asset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .asset-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .asset-symbol {
+            font-size: 14px;
+            color: #b3b3b3;
+        }
+
+        .asset-balance {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .asset-value {
+            font-size: 14px;
+            color: #b3b3b3;
+        }
+
+        .asset-change {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
         }
 
         .chart-container {
-            height: 300px;
-            margin-top: 1rem;
+            background: #1a1a1b;
+            border: 1px solid #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
         }
 
-        .animate-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
+        .chart-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 4px;
+        }
+
+        .timeframe-btn {
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeframe-btn.active {
+            background: #00d4aa;
+            color: #000;
+        }
+
+        .trading-signal {
+            background: #1a1a1b;
+            border: 1px solid #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .signal-header {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .signal-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .signal-action {
+            font-size: 18px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: #2d2d30;
+        }
+
+        .signal-hold {
+            color: #fbbf24;
+        }
+
+        .signal-buy {
+            color: #00d4aa;
+        }
+
+        .signal-sell {
+            color: #ff6b6b;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .metric-label {
+            color: #b3b3b3;
+        }
+
+        .metric-value {
+            font-weight: 500;
+        }
+
+        .trades-section {
+            background: #1a1a1b;
+            border: 1px solid #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .trades-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .trades-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .trades-table th,
+        .trades-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #2d2d30;
+            font-size: 14px;
+        }
+
+        .trades-table th {
+            color: #b3b3b3;
+            font-weight: 500;
+            background: #131314;
+        }
+
+        .trades-table td {
+            color: #ffffff;
+        }
+
+        .refresh-btn {
+            background: #00d4aa;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #00b894;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
             }
-            50% {
-                opacity: .5;
+            
+            .assets-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">TradingSystem</div>
+            <a href="#" class="nav-item active">Portfolio</a>
+            <a href="#" class="nav-item">Trade</a>
+            <a href="#" class="nav-item">Signals</a>
+            <a href="#" class="nav-item">History</a>
+        </div>
+        <div class="header-right">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="connection-status">Connected</span>
+            </div>
+            <span id="last-update">--</span>
+        </div>
+    </header>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <div class="main-container">
+        <!-- Balance Section -->
+        <div class="balance-section">
+            <div class="balance-header">
+                <div class="balance-title">Total Balance</div>
+                <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+            </div>
+            <div class="total-balance" id="total-balance">$0.00</div>
+            <div class="balance-change" id="balance-change">
+                <span>+$0.00</span>
+                <span>+0.00%</span>
+            </div>
+        </div>
 
-        // Trading Dashboard Component
-        function TradingDashboard() {
-            const [portfolioData, setPortfolioData] = useState(null);
-            const [signalData, setSignalData] = useState(null);
-            const [recentTrades, setRecentTrades] = useState([]);
-            const [systemStatus, setSystemStatus] = useState('loading');
-            const [lastUpdated, setLastUpdated] = useState(null);
-            const [error, setError] = useState(null);
-
-            const ratioChartRef = useRef(null);
-            const performanceChartRef = useRef(null);
-
-            // Load initial data
-            useEffect(() => {
-                loadDashboardData();
-                
-                // Set up auto-refresh every 30 seconds
-                const interval = setInterval(loadDashboardData, 30000);
-                
-                return () => clearInterval(interval);
-            }, []);
-
-            const loadDashboardData = async () => {
-                try {
-                    setError(null);
-                    
-                    // Load current signal
-                    const signalResponse = await fetch('/api/signal');
-                    const signalData = await signalResponse.json();
-                    
-                    console.log('Signal API Response:', signalData);
-                    console.log('Current Market Data:', signalData.currentMarket);
-                    
-                    if (signalResponse.ok) {
-                        setSignalData(signalData);
-                        setSystemStatus('online');
-                    } else {
-                        throw new Error(signalData.message || 'Failed to load signal');
-                    }
-
-                    // Load portfolio (this might fail if not initialized)
-                    try {
-                        const portfolioResponse = await fetch('/api/portfolio');
-                        const portfolioData = await portfolioResponse.json();
-                        
-                        if (portfolioResponse.ok) {
-                            setPortfolioData(portfolioData);
-                        }
-                    } catch (portfolioError) {
-                        console.log('Portfolio not initialized yet');
-                    }
-
-                    // Mock recent trades (in production, load from database)
-                    setRecentTrades([
-                        {
-                            id: 1,
-                            timestamp: new Date(Date.now() - 3600000).toISOString(),
-                            action: 'SELL_ETH_BUY_BTC',
-                            amount: '0.1234',
-                            price: '0.063247',
-                            pnl: '+142'
-                        },
-                        {
-                            id: 2,
-                            timestamp: new Date(Date.now() - 7200000).toISOString(),
-                            action: 'BUY_ETH_SELL_BTC',
-                            amount: '0.0987',
-                            price: '0.062891',
-                            pnl: '+89'
-                        }
-                    ]);
-
-                    setLastUpdated(new Date());
-
-                } catch (error) {
-                    console.error('Dashboard load error:', error);
-                    console.error('Error details:', {
-                        message: error.message,
-                        stack: error.stack,
-                        name: error.name
-                    });
-                    setError(`Dashboard Error: ${error.message}`);
-                    setSystemStatus('offline');
-                }
-            };
-
-            const formatTime = (timestamp) => {
-                return new Date(timestamp).toLocaleTimeString();
-            };
-
-            const formatDate = (timestamp) => {
-                return new Date(timestamp).toLocaleDateString();
-            };
-
-            if (error) {
-                return (
-                    <div className="container">
-                        <div className="frame bg-red-100 border-red-200 p-6 text-center">
-                            <div className="tile">
-                                <div className="tile__icon">
-                                    <i className="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
-                                </div>
-                                <div className="tile__container">
-                                    <p className="tile__title text-red-700">Dashboard Error</p>
-                                    <p className="tile__subtitle text-red-600">{error}</p>
-                                    <button className="btn btn-primary mt-3" onClick={loadDashboardData}>
-                                        <i className="fas fa-redo mr-2"></i>Retry
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="container">
-                    {/* Header */}
-                    <div className="hero hero-sm">
-                        <div className="hero-body">
-                            <div className="content u-text-center text-white trading-header">
-                                <h1 className="title">
-                                    <span className={`status-dot ${systemStatus === 'online' ? 'status-online' : 'status-offline'}`}></span>
-                                    <i className="fab fa-ethereum mr-2"></i>ETH/BTC Trading System
-                                </h1>
-                                <h6 className="subtitle text-white opacity-75">
-                                    <i className="fas fa-brain mr-2"></i>Mega-Optimal Strategy • Live Dashboard
-                                </h6>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Dashboard Grid */}
-                    <div className="row">
-                        <div className="col-6 col-lg-3">
-                            {/* Current Signal */}
-                            <div className="frame p-0 mb-3">
-                                <div className="frame__header p-3">
-                                    <div className="frame__title">
-                                        <i className="fas fa-chart-line mr-2"></i>Trading Signal
-                                    </div>
-                                </div>
-                                <div className="frame__body p-3">
-                                    {signalData ? (
-                                        <>
-                                            <div className={`signal-card signal-${signalData.signal?.shouldTrade ? 
-                                                (signalData.signal.action.includes('BUY_ETH') ? 'buy' : 'sell') : 'hold'}`}>
-                                                <div className="u-text-lg font-bold">
-                                                    {signalData.signal?.shouldTrade ? 
-                                                        signalData.signal.action.replace('_', ' ') : 'HOLD POSITION'}
-                                                </div>
-                                            </div>
-                                            <div className="content u-text-center mb-2">
-                                                <div className="metric-value">{signalData.currentMarket?.ethBtcRatio ? signalData.currentMarket.ethBtcRatio.toFixed(6) : '--'}</div>
-                                                <p className="text-gray-600 text-xs uppercase">ETH/BTC Ratio</p>
-                                            </div>
-                                            <div className="row">
-                                                <div className="col-6 u-text-center">
-                                                    <div className="u-text-lg font-bold text-blue-600">
-                                                        {signalData.signal?.zScore ? signalData.signal.zScore.toFixed(3) : '--'}
-                                                    </div>
-                                                    <p className="text-gray-600 text-xs">Z-Score</p>
-                                                </div>
-                                                <div className="col-6 u-text-center">
-                                                    <div className="u-text-lg font-bold text-blue-600">
-                                                        {((signalData.signal?.confidence || 0) * 100).toFixed(1)}%
-                                                    </div>
-                                                    <p className="text-gray-600 text-xs">Confidence</p>
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="content u-text-center animate-pulse">
-                                            <i className="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
-                                            <p className="text-gray-500 mt-2">Loading signal...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="col-6 col-lg-3">
-                            {/* Portfolio Status */}
-                            <div className="frame p-0 mb-3">
-                                <div className="frame__header p-3">
-                                    <div className="frame__title">
-                                        <i className="fas fa-wallet mr-2"></i>Portfolio Status
-                                    </div>
-                                </div>
-                                <div className="frame__body p-3">
-                                    {portfolioData?.portfolio ? (
-                                        <>
-                                            <div className="content u-text-center mb-3">
-                                                <div className="metric-value">{portfolioData.portfolio.totalValueBTC}</div>
-                                                <p className="text-gray-600 text-xs uppercase">Total Value BTC</p>
-                                            </div>
-                                            <div className="allocation-grid">
-                                                <div className="allocation-item">
-                                                    <div className="u-text-lg font-bold text-gray-800">
-                                                        {portfolioData.portfolio.ethAmount}
-                                                    </div>
-                                                    <div className="text-xs text-gray-600 uppercase">ETH</div>
-                                                </div>
-                                                <div className="allocation-item">
-                                                    <div className="u-text-lg font-bold text-gray-800">
-                                                        {portfolioData.portfolio.btcAmount}
-                                                    </div>
-                                                    <div className="text-xs text-gray-600 uppercase">BTC</div>
-                                                </div>
-                                            </div>
-                                            <div className="allocation-grid mt-2">
-                                                <div className="allocation-item">
-                                                    <div className="u-text-sm font-bold text-blue-600">
-                                                        {portfolioData.portfolio.allocation?.ethPercent || '--'}
-                                                    </div>
-                                                    <div className="text-xs text-gray-600">ETH %</div>
-                                                </div>
-                                                <div className="allocation-item">
-                                                    <div className="u-text-sm font-bold text-blue-600">
-                                                        {portfolioData.portfolio.allocation?.btcPercent || '--'}
-                                                    </div>
-                                                    <div className="text-xs text-gray-600">BTC %</div>
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="content u-text-center">
-                                            <i className="fas fa-exclamation-circle text-yellow-500 text-2xl"></i>
-                                            <p className="text-gray-500 mt-2">Portfolio not initialized</p>
-                                            <p className="text-xs text-gray-400">Use API to initialize portfolio</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="col-6 col-lg-3">
-                            {/* Market Data */}
-                            <div className="frame p-0 mb-3">
-                                <div className="frame__header p-3">
-                                    <div className="frame__title">
-                                        <i className="fas fa-chart-bar mr-2"></i>Market Data
-                                    </div>
-                                </div>
-                                <div className="frame__body p-3">
-                                    {signalData?.currentMarket ? (
-                                        <>
-                                            <div className="content u-text-center mb-2">
-                                                <div className="u-text-lg font-bold text-green-600">
-                                                    ${signalData.currentMarket.ethPrice?.toLocaleString() || '--'}
-                                                </div>
-                                                <p className="text-gray-600 text-xs uppercase">ETH Price</p>
-                                            </div>
-                                            <div className="content u-text-center mb-2">
-                                                <div className="u-text-lg font-bold text-orange-500">
-                                                    ${signalData.currentMarket.btcPrice?.toLocaleString() || '--'}
-                                                </div>
-                                                <p className="text-gray-600 text-xs uppercase">BTC Price</p>
-                                            </div>
-                                            <div className="content u-text-center">
-                                                <div className="u-text-sm font-bold text-gray-600">
-                                                    {Math.round((signalData.currentMarket.dataAge || 0) / 1000)}s ago
-                                                </div>
-                                                <p className="text-gray-600 text-xs uppercase">Data Age</p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="content u-text-center animate-pulse">
-                                            <i className="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
-                                            <p className="text-gray-500 mt-2">Loading market data...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="col-6 col-lg-3">
-                            {/* Strategy Parameters */}
-                            <div className="frame p-0 mb-3">
-                                <div className="frame__header p-3">
-                                    <div className="frame__title">
-                                        <i className="fas fa-cogs mr-2"></i>Strategy Settings
-                                    </div>
-                                </div>
-                                <div className="frame__body p-3">
-                                    {signalData?.strategy ? (
-                                        <div className="space-y-3">
-                                            <div className="content u-text-center">
-                                                <div className="u-text-lg font-bold text-purple-600">
-                                                    {signalData.strategy?.zScoreThreshold ? signalData.strategy.zScoreThreshold.toFixed(3) : '--'}
-                                                </div>
-                                                <p className="text-gray-600 text-xs uppercase">Z-Score Threshold</p>
-                                            </div>
-                                            <div className="content u-text-center">
-                                                <div className="u-text-lg font-bold text-purple-600">
-                                                    {signalData.strategy.rebalanceAmount || '--'}
-                                                </div>
-                                                <p className="text-gray-600 text-xs uppercase">Rebalance Amount</p>
-                                            </div>
-                                            <div className="content u-text-center">
-                                                <div className="u-text-lg font-bold text-purple-600">
-                                                    {signalData.strategy.transactionCost || '--'}
-                                                </div>
-                                                <p className="text-gray-600 text-xs uppercase">Transaction Cost</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="content u-text-center animate-pulse">
-                                            <i className="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
-                                            <p className="text-gray-500 mt-2">Loading strategy...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Recent Trades Table */}
-                    <div className="frame p-0 mb-3">
-                        <div className="frame__header p-3">
-                            <div className="frame__title">
-                                <i className="fas fa-history mr-2"></i>Recent Trading Activity
-                            </div>
-                        </div>
-                        <div className="frame__body p-0">
-                            {recentTrades.length > 0 ? (
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Action</th>
-                                            <th>Amount</th>
-                                            <th>Price</th>
-                                            <th>P&L (Sats)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {recentTrades.map(trade => (
-                                            <tr key={trade.id}>
-                                                <td>{formatTime(trade.timestamp)}</td>
-                                                <td>
-                                                    <span className={`tag ${trade.action.includes('BUY_ETH') ? 'tag-success' : 'tag-danger'}`}>
-                                                        {trade.action.replace('_', ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="font-mono">{trade.amount}</td>
-                                                <td className="font-mono">{trade.price}</td>
-                                                <td className={`font-mono ${trade.pnl.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {trade.pnl}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div className="content u-text-center p-6">
-                                    <i className="fas fa-chart-line text-gray-400 text-3xl"></i>
-                                    <p className="text-gray-500 mt-2">No recent trades</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* System Controls */}
-                    <div className="frame p-0 mb-3">
-                        <div className="frame__header p-3">
-                            <div className="frame__title">
-                                <i className="fas fa-tools mr-2"></i>System Controls
-                            </div>
-                        </div>
-                        <div className="frame__body p-3">
-                            <div className="content u-text-center">
-                                <div className="btn-group">
-                                    <button className="btn btn-primary" onClick={loadDashboardData}>
-                                        <i className="fas fa-sync-alt mr-2"></i>Refresh Data
-                                    </button>
-                                    <button className="btn btn-info" onClick={() => window.open('/api/backtest', '_blank')}>
-                                        <i className="fas fa-chart-area mr-2"></i>Run Backtest
-                                    </button>
-                                    <button className="btn btn-success" onClick={() => window.open('/api/signal', '_blank')}>
-                                        <i className="fas fa-bullseye mr-2"></i>Get Signal
-                                    </button>
-                                </div>
-                                {lastUpdated && (
-                                    <p className="text-gray-500 text-sm mt-3">
-                                        <i className="fas fa-clock mr-1"></i>
-                                        Last updated: {lastUpdated.toLocaleTimeString()}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
+        <!-- Assets Grid -->
+        <div class="assets-grid">
+            <div class="asset-card">
+                <div class="asset-header">
+                    <div class="asset-name">
+                        <span>Bitcoin</span>
+                        <span class="asset-symbol">BTC</span>
                     </div>
                 </div>
-            );
+                <div class="asset-balance" id="btc-balance">0.00000 BTC</div>
+                <div class="asset-value" id="btc-value">$0.00</div>
+                <div class="asset-change positive" id="btc-change">+0.00%</div>
+            </div>
+
+            <div class="asset-card">
+                <div class="asset-header">
+                    <div class="asset-name">
+                        <span>Ethereum</span>
+                        <span class="asset-symbol">ETH</span>
+                    </div>
+                </div>
+                <div class="asset-balance" id="eth-balance">0.00000 ETH</div>
+                <div class="asset-value" id="eth-value">$0.00</div>
+                <div class="asset-change positive" id="eth-change">+0.00%</div>
+            </div>
+
+            <div class="asset-card">
+                <div class="asset-header">
+                    <div class="asset-name">
+                        <span>ETH/BTC Ratio</span>
+                        <span class="asset-symbol">CURRENT</span>
+                    </div>
+                </div>
+                <div class="asset-balance" id="eth-btc-ratio">0.000000</div>
+                <div class="asset-value" id="ratio-age">--</div>
+                <div class="asset-change" id="ratio-change">--</div>
+            </div>
+        </div>
+
+        <!-- Charts and Signal Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Portfolio Balance</div>
+                    <div class="timeframe-selector">
+                        <button class="timeframe-btn active">1D</button>
+                        <button class="timeframe-btn">7D</button>
+                        <button class="timeframe-btn">1M</button>
+                        <button class="timeframe-btn">3M</button>
+                        <button class="timeframe-btn">1Y</button>
+                    </div>
+                </div>
+                <canvas id="balanceChart" width="600" height="300"></canvas>
+            </div>
+
+            <div class="trading-signal">
+                <div class="signal-header">Trading Signal</div>
+                <div class="signal-status">
+                    <div class="signal-action signal-hold" id="signal-action">HOLD</div>
+                </div>
+                
+                <div class="metric-row">
+                    <span class="metric-label">Z-Score</span>
+                    <span class="metric-value" id="z-score">0.0000</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Strength</span>
+                    <span class="metric-value" id="signal-strength">0.00%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Confidence</span>
+                    <span class="metric-value" id="signal-confidence">0.00%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Threshold</span>
+                    <span class="metric-value" id="threshold">±1.258</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Rebalance</span>
+                    <span class="metric-value" id="rebalance-amount">49.79%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Data Points</span>
+                    <span class="metric-value" id="data-points">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Source</span>
+                    <span class="metric-value" id="data-source">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Trades Section -->
+        <div class="trades-section">
+            <div class="trades-header">
+                <div class="trades-title">Recent Activity</div>
+            </div>
+            <div class="table-container">
+                <table class="trades-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Asset</th>
+                            <th>Amount</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trades-table-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #b3b3b3; padding: 20px;">
+                                No recent trades
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let balanceChart = null;
+        let isLoading = false;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            loadDashboardData();
+            
+            // Set up auto-refresh every 30 seconds
+            setInterval(loadDashboardData, 30000);
+        });
+
+        function initializeChart() {
+            const ctx = document.getElementById('balanceChart').getContext('2d');
+            
+            balanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: [],
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                color: '#2d2d30'
+                            },
+                            ticks: {
+                                color: '#b3b3b3'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: '#2d2d30'
+                            },
+                            ticks: {
+                                color: '#b3b3b3',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
-        // Render the dashboard
-        ReactDOM.render(<TradingDashboard />, document.getElementById('root'));
+        async function loadDashboardData() {
+            if (isLoading) return;
+            
+            try {
+                isLoading = true;
+                
+                // Load signal data
+                const signalResponse = await fetch('/api/signal');
+                const signalData = await signalResponse.json();
+                
+                // Load portfolio data
+                const portfolioResponse = await fetch('/api/portfolio');
+                const portfolioData = await portfolioResponse.json();
+                
+                updateSignalDisplay(signalData);
+                updatePortfolioDisplay(portfolioData);
+                updateLastUpdate();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                updateConnectionStatus(false);
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function updateSignalDisplay(data) {
+            const actionElement = document.getElementById('signal-action');
+            const action = data.signal?.action || 'HOLD';
+            
+            actionElement.textContent = action;
+            actionElement.className = `signal-action signal-${action.toLowerCase().replace('_', '-')}`;
+            
+            document.getElementById('z-score').textContent = 
+                data.signal?.zScore?.toFixed(4) || '0.0000';
+            document.getElementById('signal-strength').textContent = 
+                ((data.signal?.strength || 0) * 100).toFixed(1) + '%';
+            document.getElementById('signal-confidence').textContent = 
+                ((data.signal?.confidence || 0) * 100).toFixed(1) + '%';
+            document.getElementById('data-points').textContent = 
+                data.metadata?.dataPoints || '--';
+            document.getElementById('data-source').textContent = 
+                data.metadata?.dataSource || '--';
+            
+            // Update ETH/BTC ratio
+            if (data.currentMarket) {
+                document.getElementById('eth-btc-ratio').textContent = 
+                    data.currentMarket.ethBtcRatio?.toFixed(6) || '0.000000';
+                
+                if (data.currentMarket.dataAge) {
+                    const ageMinutes = Math.floor(data.currentMarket.dataAge / (1000 * 60));
+                    document.getElementById('ratio-age').textContent = 
+                        `${ageMinutes}m ago`;
+                }
+            }
+        }
+
+        function updatePortfolioDisplay(data) {
+            if (data.portfolio) {
+                const portfolio = data.portfolio;
+                
+                // Update balances
+                document.getElementById('btc-balance').textContent = 
+                    `${portfolio.btc_balance?.toFixed(5) || '0.00000'} BTC`;
+                document.getElementById('eth-balance').textContent = 
+                    `${portfolio.eth_balance?.toFixed(5) || '0.00000'} ETH`;
+                
+                // Update USD values
+                document.getElementById('total-balance').textContent = 
+                    `$${portfolio.total_usd_value?.toLocaleString() || '0.00'}`;
+                document.getElementById('btc-value').textContent = 
+                    `$${portfolio.btc_usd_value?.toLocaleString() || '0.00'}`;
+                document.getElementById('eth-value').textContent = 
+                    `$${portfolio.eth_usd_value?.toLocaleString() || '0.00'}`;
+            }
+        }
+
+        function updateLastUpdate() {
+            const now = new Date();
+            document.getElementById('last-update').textContent = 
+                now.toLocaleTimeString();
+        }
+
+        function updateConnectionStatus(connected = true) {
+            const statusElement = document.getElementById('connection-status');
+            const dotElement = document.querySelector('.status-dot');
+            
+            if (connected) {
+                statusElement.textContent = 'Connected';
+                dotElement.style.background = '#00d4aa';
+            } else {
+                statusElement.textContent = 'Disconnected';
+                dotElement.style.background = '#ff6b6b';
+            }
+        }
+
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        // Timeframe selector
+        document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // TODO: Update chart based on timeframe
+                console.log('Timeframe selected:', this.textContent);
+            });
+        });
     </script>
 </body>
 </html>
