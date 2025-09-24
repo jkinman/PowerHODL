@@ -375,7 +375,10 @@
         <div class="balance-section">
             <div class="balance-header">
                 <div class="balance-title">Total BTC Accumulated</div>
-                <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+                    <button class="sandbox-btn" onclick="openBacktestSandbox()" style="background: #fbbf24; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; cursor: pointer;">Backtest Sandbox</button>
+                </div>
             </div>
             <div class="total-balance" id="total-balance">0.00000000 BTC</div>
             <div class="balance-change" id="balance-change">
@@ -610,6 +613,149 @@
                     of advanced optimization techniques including genetic algorithms and simulated annealing, 
                     tested on years of historical data.
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backtest Sandbox Modal -->
+    <div id="backtestSandbox" class="sandbox-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
+        <div class="sandbox-content" style="background: #1a1a1b; margin: 20px auto; max-width: 1200px; border-radius: 12px; border: 1px solid #2d2d30; position: relative;">
+            <div class="sandbox-header" style="padding: 20px; border-bottom: 1px solid #2d2d30; display: flex; justify-content: between; align-items: center;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 24px;">Backtest Sandbox</h2>
+                <button onclick="closeBacktestSandbox()" style="background: #ff6b6b; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px;">✕</button>
+            </div>
+            
+            <div class="sandbox-body" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; padding: 20px;">
+                <!-- Parameter Controls -->
+                <div class="parameter-panel" style="background: #252526; padding: 20px; border-radius: 8px; border: 1px solid #2d2d30;">
+                    <h3 style="color: #ffffff; margin-top: 0;">Strategy Parameters</h3>
+                    
+                    <!-- Z-Score Threshold -->
+                    <div class="param-group" style="margin-bottom: 20px;">
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Z-Score Threshold:</label>
+                        <input type="range" id="zScoreThreshold" min="0.5" max="3.0" step="0.1" value="1.258" style="width: 100%; margin-bottom: 5px;">
+                        <span id="zScoreValue" style="color: #fbbf24; font-weight: bold;">±1.258</span>
+                        <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">Higher = fewer but stronger signals</p>
+                    </div>
+
+                    <!-- Rebalance Percentage -->
+                    <div class="param-group" style="margin-bottom: 20px;">
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Rebalance Percentage:</label>
+                        <input type="range" id="rebalancePercent" min="10" max="90" step="5" value="50" style="width: 100%; margin-bottom: 5px;">
+                        <span id="rebalanceValue" style="color: #fbbf24; font-weight: bold;">50%</span>
+                        <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">Percentage of holdings to trade</p>
+                    </div>
+
+                    <!-- Lookback Window -->
+                    <div class="param-group" style="margin-bottom: 20px;">
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Lookback Window (days):</label>
+                        <input type="range" id="lookbackWindow" min="5" max="60" step="1" value="15" style="width: 100%; margin-bottom: 5px;">
+                        <span id="lookbackValue" style="color: #fbbf24; font-weight: bold;">15 days</span>
+                        <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">Historical window for Z-score calculation</p>
+                    </div>
+
+                    <!-- Transaction Cost -->
+                    <div class="param-group" style="margin-bottom: 20px;">
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Transaction Cost (%):</label>
+                        <input type="range" id="transactionCost" min="0" max="5" step="0.1" value="1.66" style="width: 100%; margin-bottom: 5px;">
+                        <span id="transactionValue" style="color: #fbbf24; font-weight: bold;">1.66%</span>
+                        <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">Exchange fees per trade</p>
+                    </div>
+
+                    <!-- Data Range -->
+                    <div class="param-group" style="margin-bottom: 20px;">
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Backtest Period:</label>
+                        <select id="backtestPeriod" style="width: 100%; padding: 8px; background: #1a1a1b; color: #ffffff; border: 1px solid #2d2d30; border-radius: 4px;">
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="180">Last 180 days</option>
+                            <option value="365" selected>Last 365 days</option>
+                        </select>
+                    </div>
+
+                    <!-- Starting Balance -->
+                    <div class="param-group" style="margin-bottom: 20px;">
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Starting BTC:</label>
+                        <input type="number" id="startingBTC" step="0.01" value="0.10" style="width: 100%; padding: 8px; background: #1a1a1b; color: #ffffff; border: 1px solid #2d2d30; border-radius: 4px;">
+                        <label style="color: #b3b3b3; display: block; margin-top: 10px; margin-bottom: 5px;">Starting ETH:</label>
+                        <input type="number" id="startingETH" step="0.1" value="2.0" style="width: 100%; padding: 8px; background: #1a1a1b; color: #ffffff; border: 1px solid #2d2d30; border-radius: 4px;">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons" style="margin-top: 30px;">
+                        <button onclick="runSingleBacktest()" style="width: 100%; padding: 12px; background: #00d4aa; color: #000; border: none; border-radius: 6px; font-weight: bold; margin-bottom: 10px; cursor: pointer;">Run Single Backtest</button>
+                        <button onclick="runOptimization()" style="width: 100%; padding: 12px; background: #fbbf24; color: #000; border: none; border-radius: 6px; font-weight: bold; margin-bottom: 10px; cursor: pointer;">Run Optimization (10 iterations)</button>
+                        <button onclick="runAdvancedOptimization()" style="width: 100%; padding: 12px; background: #ff6b6b; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Advanced Optimization (100 iterations)</button>
+                    </div>
+
+                    <!-- Preset Strategies -->
+                    <div class="preset-strategies" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #2d2d30;">
+                        <h4 style="color: #ffffff; margin-bottom: 10px;">Preset Strategies:</h4>
+                        <button onclick="loadPreset('conservative')" style="width: 100%; padding: 8px; background: #2d2d30; color: #b3b3b3; border: 1px solid #404040; border-radius: 4px; margin-bottom: 5px; cursor: pointer;">Conservative</button>
+                        <button onclick="loadPreset('megaOptimal')" style="width: 100%; padding: 8px; background: #2d2d30; color: #b3b3b3; border: 1px solid #404040; border-radius: 4px; margin-bottom: 5px; cursor: pointer;">Mega-Optimal (Current)</button>
+                        <button onclick="loadPreset('aggressive')" style="width: 100%; padding: 8px; background: #2d2d30; color: #b3b3b3; border: 1px solid #404040; border-radius: 4px; margin-bottom: 5px; cursor: pointer;">Aggressive</button>
+                    </div>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="results-panel" style="background: #252526; padding: 20px; border-radius: 8px; border: 1px solid #2d2d30;">
+                    <div class="results-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #ffffff; margin: 0;">Backtest Results</h3>
+                        <div id="backtestStatus" style="color: #b3b3b3; font-size: 14px;">Ready to run</div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="quick-stats" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                        <div class="stat-card" style="background: #1a1a1b; padding: 15px; border-radius: 6px; border: 1px solid #2d2d30;">
+                            <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">BTC GROWTH</div>
+                            <div id="btcGrowth" style="color: #00d4aa; font-size: 20px; font-weight: bold;">--</div>
+                        </div>
+                        <div class="stat-card" style="background: #1a1a1b; padding: 15px; border-radius: 6px; border: 1px solid #2d2d30;">
+                            <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">WIN RATE</div>
+                            <div id="winRate" style="color: #fbbf24; font-size: 20px; font-weight: bold;">--</div>
+                        </div>
+                        <div class="stat-card" style="background: #1a1a1b; padding: 15px; border-radius: 6px; border: 1px solid #2d2d30;">
+                            <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">TOTAL TRADES</div>
+                            <div id="totalTrades" style="color: #ffffff; font-size: 20px; font-weight: bold;">--</div>
+                        </div>
+                        <div class="stat-card" style="background: #1a1a1b; padding: 15px; border-radius: 6px; border: 1px solid #2d2d30;">
+                            <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">MAX DRAWDOWN</div>
+                            <div id="maxDrawdown" style="color: #ff6b6b; font-size: 20px; font-weight: bold;">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart -->
+                    <div class="chart-section" style="margin-bottom: 20px;">
+                        <h4 style="color: #ffffff; margin-bottom: 10px;">BTC Accumulation Over Time</h4>
+                        <div style="position: relative; height: 250px; width: 100%; background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30;">
+                            <canvas id="backtestChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Trade Log -->
+                    <div class="trade-log" style="max-height: 200px; overflow-y: auto;">
+                        <h4 style="color: #ffffff; margin-bottom: 10px;">Recent Trades</h4>
+                        <div id="tradeLogContent" style="background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30; padding: 10px;">
+                            <div style="color: #666; text-align: center; padding: 20px;">Run a backtest to see trade history</div>
+                        </div>
+                    </div>
+
+                    <!-- Optimization Progress -->
+                    <div id="optimizationProgress" style="display: none; margin-top: 20px;">
+                        <h4 style="color: #ffffff; margin-bottom: 10px;">Optimization Progress</h4>
+                        <div style="background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30; padding: 15px;">
+                            <div style="color: #b3b3b3; margin-bottom: 10px;">
+                                Iteration <span id="currentIteration">0</span> of <span id="totalIterations">0</span>
+                            </div>
+                            <div style="background: #2d2d30; height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div id="progressBar" style="background: #00d4aa; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <div style="margin-top: 10px; color: #fbbf24;">
+                                Best BTC Growth: <span id="bestBtcGrowth">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1091,8 +1237,11 @@
                 
                 if (historicalData.length === 0) {
                     // Generate mock historical data for demo
-                    console.log('📊 Generating mock historical data...');
+                    console.log('📊 Generating CONSISTENT mock historical data (same every time)...');
                     historicalData = generateMockHistoricalData();
+                    console.log('🎭 Using mock data - charts will be consistent on refresh');
+                } else {
+                    console.log('📡 Using REAL historical data from database/API');
                 }
                 
                 // Update charts with historical data
@@ -1114,23 +1263,30 @@
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
                 
-                // Generate realistic ratio fluctuation
+                // Generate CONSISTENT ratio fluctuation using deterministic seed
                 const volatility = 0.003;
                 const trendComponent = Math.sin(i * 0.2) * 0.002;
-                const randomComponent = (Math.random() - 0.5) * volatility;
-                const ratio = baseRatio + trendComponent + randomComponent;
+                // Use deterministic "random" based on day index for consistency
+                const pseudoRandom = Math.sin(i * 12.9898) * 0.5; // Deterministic value between -0.5 and 0.5
+                const ratio = baseRatio + trendComponent + (pseudoRandom * volatility);
                 
                 // Generate Z-score based on ratio deviation
                 const meanRatio = 0.037;
                 const stdDev = 0.003;
                 const zScore = (ratio - meanRatio) / stdDev;
                 
+                // Generate consistent price data
+                const ethPriceBase = 2200;
+                const btcPriceBase = 43000;
+                const ethPrice = ethPriceBase + (Math.sin(i * 7.234) * 200); // Deterministic price variation
+                const btcPrice = btcPriceBase + (Math.sin(i * 5.678) * 2500); // Deterministic price variation
+                
                 data.push({
                     date: date.toISOString().split('T')[0],
                     ethBtcRatio: ratio,
                     zScore: zScore,
-                    ethPrice: 2200 + (Math.random() - 0.5) * 400,
-                    btcPrice: 43000 + (Math.random() - 0.5) * 5000
+                    ethPrice: ethPrice,
+                    btcPrice: btcPrice
                 });
             }
             
@@ -1203,6 +1359,320 @@
                 console.log('Timeframe selected:', this.textContent);
             });
         });
+
+        // Backtest Sandbox Functions
+        let backtestChart = null;
+        let isOptimizing = false;
+
+        function openBacktestSandbox() {
+            document.getElementById('backtestSandbox').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Initialize parameter listeners
+            initializeParameterListeners();
+            
+            // Initialize backtest chart
+            setTimeout(() => {
+                initializeBacktestChart();
+            }, 100);
+        }
+
+        function closeBacktestSandbox() {
+            document.getElementById('backtestSandbox').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function initializeParameterListeners() {
+            // Z-Score Threshold
+            const zScoreSlider = document.getElementById('zScoreThreshold');
+            const zScoreValue = document.getElementById('zScoreValue');
+            zScoreSlider.addEventListener('input', function() {
+                zScoreValue.textContent = `±${this.value}`;
+            });
+
+            // Rebalance Percentage
+            const rebalanceSlider = document.getElementById('rebalancePercent');
+            const rebalanceValue = document.getElementById('rebalanceValue');
+            rebalanceSlider.addEventListener('input', function() {
+                rebalanceValue.textContent = `${this.value}%`;
+            });
+
+            // Lookback Window
+            const lookbackSlider = document.getElementById('lookbackWindow');
+            const lookbackValue = document.getElementById('lookbackValue');
+            lookbackSlider.addEventListener('input', function() {
+                lookbackValue.textContent = `${this.value} days`;
+            });
+
+            // Transaction Cost
+            const transactionSlider = document.getElementById('transactionCost');
+            const transactionValue = document.getElementById('transactionValue');
+            transactionSlider.addEventListener('input', function() {
+                transactionValue.textContent = `${this.value}%`;
+            });
+        }
+
+        function initializeBacktestChart() {
+            const ctx = document.getElementById('backtestChart').getContext('2d');
+            
+            backtestChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'BTC Accumulation',
+                        data: [],
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                    }, {
+                        label: 'Buy & Hold',
+                        data: [],
+                        borderColor: '#666',
+                        backgroundColor: 'rgba(102, 102, 102, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: { 
+                        legend: { 
+                            display: true,
+                            labels: { color: '#b3b3b3' }
+                        } 
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: { color: '#2d2d30' },
+                            ticks: { color: '#b3b3b3' }
+                        },
+                        y: {
+                            display: true,
+                            grid: { color: '#2d2d30' },
+                            ticks: {
+                                color: '#b3b3b3',
+                                callback: function(value) {
+                                    return value.toFixed(6) + ' BTC';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getBacktestParameters() {
+            return {
+                zScoreThreshold: parseFloat(document.getElementById('zScoreThreshold').value),
+                rebalancePercent: parseFloat(document.getElementById('rebalancePercent').value),
+                lookbackWindow: parseInt(document.getElementById('lookbackWindow').value),
+                transactionCost: parseFloat(document.getElementById('transactionCost').value),
+                backtestPeriod: parseInt(document.getElementById('backtestPeriod').value),
+                startingBTC: parseFloat(document.getElementById('startingBTC').value),
+                startingETH: parseFloat(document.getElementById('startingETH').value)
+            };
+        }
+
+        async function runSingleBacktest() {
+            if (isOptimizing) return;
+
+            const params = getBacktestParameters();
+            document.getElementById('backtestStatus').textContent = 'Running backtest...';
+            
+            try {
+                const response = await fetch('/api/backtest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'run',
+                        parameters: params,
+                        outputFormat: 'btc'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayBacktestResults(result.data);
+                    document.getElementById('backtestStatus').textContent = 'Backtest completed';
+                } else {
+                    throw new Error(result.error || 'Backtest failed');
+                }
+            } catch (error) {
+                console.error('Backtest error:', error);
+                document.getElementById('backtestStatus').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function runOptimization() {
+            if (isOptimizing) return;
+            await runOptimizationWithIterations(10);
+        }
+
+        async function runAdvancedOptimization() {
+            if (isOptimizing) return;
+            await runOptimizationWithIterations(100);
+        }
+
+        async function runOptimizationWithIterations(iterations) {
+            isOptimizing = true;
+            document.getElementById('optimizationProgress').style.display = 'block';
+            document.getElementById('totalIterations').textContent = iterations;
+            document.getElementById('currentIteration').textContent = '0';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('bestBtcGrowth').textContent = '--';
+            
+            let bestResult = null;
+            let bestParams = null;
+
+            for (let i = 0; i < iterations; i++) {
+                document.getElementById('currentIteration').textContent = i + 1;
+                document.getElementById('progressBar').style.width = `${((i + 1) / iterations) * 100}%`;
+                
+                // Generate random parameters around current values
+                const baseParams = getBacktestParameters();
+                const randomParams = {
+                    zScoreThreshold: baseParams.zScoreThreshold + (Math.random() - 0.5) * 1.0,
+                    rebalancePercent: Math.max(10, Math.min(90, baseParams.rebalancePercent + (Math.random() - 0.5) * 40)),
+                    lookbackWindow: Math.max(5, Math.min(60, baseParams.lookbackWindow + Math.floor((Math.random() - 0.5) * 20))),
+                    transactionCost: Math.max(0, Math.min(5, baseParams.transactionCost + (Math.random() - 0.5) * 2)),
+                    backtestPeriod: baseParams.backtestPeriod,
+                    startingBTC: baseParams.startingBTC,
+                    startingETH: baseParams.startingETH
+                };
+
+                try {
+                    const response = await fetch('/api/backtest', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'run',
+                            parameters: randomParams,
+                            outputFormat: 'btc'
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success && result.data.performance) {
+                        const btcGrowth = result.data.performance.btcGrowthPercent || 0;
+                        
+                        if (!bestResult || btcGrowth > bestResult.btcGrowthPercent) {
+                            bestResult = result.data.performance;
+                            bestParams = randomParams;
+                            document.getElementById('bestBtcGrowth').textContent = `+${btcGrowth.toFixed(2)}%`;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Optimization iteration ${i + 1} failed:`, error);
+                }
+
+                // Small delay to prevent overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            // Apply best parameters and run final backtest
+            if (bestParams) {
+                applyParameters(bestParams);
+                await runSingleBacktest();
+            }
+
+            isOptimizing = false;
+            document.getElementById('optimizationProgress').style.display = 'none';
+        }
+
+        function applyParameters(params) {
+            document.getElementById('zScoreThreshold').value = params.zScoreThreshold;
+            document.getElementById('zScoreValue').textContent = `±${params.zScoreThreshold.toFixed(3)}`;
+            
+            document.getElementById('rebalancePercent').value = params.rebalancePercent;
+            document.getElementById('rebalanceValue').textContent = `${params.rebalancePercent.toFixed(0)}%`;
+            
+            document.getElementById('lookbackWindow').value = params.lookbackWindow;
+            document.getElementById('lookbackValue').textContent = `${params.lookbackWindow} days`;
+            
+            document.getElementById('transactionCost').value = params.transactionCost;
+            document.getElementById('transactionValue').textContent = `${params.transactionCost.toFixed(2)}%`;
+        }
+
+        function loadPreset(preset) {
+            const presets = {
+                conservative: {
+                    zScoreThreshold: 2.0,
+                    rebalancePercent: 25,
+                    lookbackWindow: 30,
+                    transactionCost: 1.0
+                },
+                megaOptimal: {
+                    zScoreThreshold: 1.258,
+                    rebalancePercent: 50,
+                    lookbackWindow: 15,
+                    transactionCost: 1.66
+                },
+                aggressive: {
+                    zScoreThreshold: 0.8,
+                    rebalancePercent: 75,
+                    lookbackWindow: 7,
+                    transactionCost: 2.0
+                }
+            };
+
+            if (presets[preset]) {
+                applyParameters(presets[preset]);
+            }
+        }
+
+        function displayBacktestResults(results) {
+            // Update quick stats
+            document.getElementById('btcGrowth').textContent = 
+                results.performance ? `+${results.performance.btcGrowthPercent.toFixed(2)}%` : '--';
+            document.getElementById('winRate').textContent = 
+                results.performance ? `${results.performance.winRate.toFixed(1)}%` : '--';
+            document.getElementById('totalTrades').textContent = 
+                results.trades ? results.trades.length : '--';
+            document.getElementById('maxDrawdown').textContent = 
+                results.performance ? `${results.performance.maxDrawdown.toFixed(2)}%` : '--';
+
+            // Update chart
+            if (results.portfolio && backtestChart) {
+                const dates = results.portfolio.map(p => new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                const btcValues = results.portfolio.map(p => p.totalBTC);
+                const hodlValues = results.portfolio.map(p => p.hodlBTC);
+
+                backtestChart.data.labels = dates;
+                backtestChart.data.datasets[0].data = btcValues;
+                backtestChart.data.datasets[1].data = hodlValues;
+                backtestChart.update('none');
+            }
+
+            // Update trade log
+            if (results.trades) {
+                const tradeLogContent = document.getElementById('tradeLogContent');
+                const recentTrades = results.trades.slice(-10).reverse();
+                
+                tradeLogContent.innerHTML = recentTrades.map(trade => `
+                    <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #2d2d30; font-size: 14px;">
+                        <span style="color: ${trade.action === 'BUY_ETH' ? '#00d4aa' : '#ff6b6b'};">
+                            ${trade.action}
+                        </span>
+                        <span style="color: #b3b3b3;">
+                            ${new Date(trade.date).toLocaleDateString()}
+                        </span>
+                        <span style="color: #fbbf24;">
+                            ${trade.btcGrowth > 0 ? '+' : ''}${trade.btcGrowth.toFixed(4)} BTC
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
     </script>
 </body>
 </html>

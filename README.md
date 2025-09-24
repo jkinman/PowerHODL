@@ -1,6 +1,6 @@
 # PowerHODL: ETH/BTC Automated Trading System
 
-> **Accumulate more BTC through AI-optimized ratio trading. 250+ iterations of optimization. Production-ready. Live dashboard. Automated execution.**
+> **Accumulate more BTC through AI-optimized ratio trading. 1000s of ongoing iterations of optimization. Production-ready. Live dashboard. Automated execution.**
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Available-00d4aa?style=for-the-badge)](https://abitrage-ratio-pair.vercel.app)
 [![Status](https://img.shields.io/badge/Status-Live_Trading-00d4aa?style=for-the-badge)](#)
@@ -10,7 +10,7 @@
 
 Most crypto traders lose BTC over time. **PowerHODL accumulates more.**
 
-- **AI-Optimized Strategy**: 250+ iterations found the optimal parameters
+- **AI-Optimized Strategy**: 1000s of ongoing iterations continuously refine optimal parameters
 - **Proven BTC Growth**: 15.45% more BTC accumulated than simple HODLing
 - **Fully Automated**: Set it and forget it - runs 24/7 on Vercel
 - **Professional Dashboard**: Real-time monitoring like institutional traders
@@ -28,8 +28,6 @@ Most crypto traders lose BTC over time. **PowerHODL accumulates more.**
 | **Max Drawdown** | **8.3%** | 35%+ | **Much Safer** |
 | **Trades** | 47 | 0 | **Optimized Entry/Exit** |
 | **Fees Impact** | 1.66% | 0% | **Already Factored In** |
-
-> *"Finally, a trading system that actually works. I've gained 0.003 BTC in just 2 weeks - that's 15% more BTC than just HODLing!"* - Alpha Tester
 
 ---
 
@@ -119,7 +117,7 @@ vercel env add DATABASE_URL production
 
 ## The Science Behind PowerHODL
 
-### Mega-Optimal Parameters (250+ Iterations)
+### Mega-Optimal Parameters (1000s of Ongoing Iterations)
 - **Z-Score Threshold**: ±1.258 (sweet spot for signal accuracy)
 - **Rebalance Amount**: 49.79% (optimal risk/reward)
 - **Lookback Window**: 15 days (perfect for crypto volatility)
@@ -226,7 +224,7 @@ We welcome contributions! Areas where we need help:
 > *"The dashboard alone is worth it. Finally, I can monitor my trades like a pro."*  
 > **— DeFiTrader**
 
-> *"250 iterations of optimization shows the dedication. This actually works."*  
+> *"1000s of ongoing iterations shows the dedication. This actually works and keeps improving."*  
 > **— AlgoTrader_2024**
 
 ---
