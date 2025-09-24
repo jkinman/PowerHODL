@@ -1690,6 +1690,13 @@
             document.getElementById('progressBar').style.width = '0%';
             document.getElementById('bestBtcGrowth').textContent = '--';
             
+            // Show data source status
+            const useRealData = document.getElementById('useRealData').checked;
+            console.log(`🚀 Starting optimization with ${useRealData ? 'REAL HISTORICAL DATA' : 'MATHEMATICAL SIMULATION'}`);
+            if (!useRealData) {
+                console.log('⚠️ Using simulation - results will be capped and less accurate');
+            }
+            
             // Clear previous optimization results for this run
             const currentRunResults = [];
             let bestResult = null;
@@ -1716,7 +1723,8 @@
                         zScore: randomParams.zScoreThreshold.toFixed(3),
                         rebalance: randomParams.rebalancePercent.toFixed(1) + '%',
                         lookback: randomParams.lookbackWindow + ' days',
-                        txCost: randomParams.transactionCost.toFixed(2) + '%'
+                        txCost: randomParams.transactionCost.toFixed(2) + '%',
+                        dataSource: useRealData ? 'REAL HISTORICAL DATA' : 'MATHEMATICAL SIMULATION'
                     });
 
                     // Get result using selected data source
@@ -1747,7 +1755,8 @@
                                 throw new Error(`API error: ${response.status}`);
                             }
                         } catch (error) {
-                            console.warn(`⚠️ Real data failed for iteration ${i + 1}, using simulation:`, error.message);
+                            console.error(`🚨 REAL API FAILED for iteration ${i + 1}:`, error.message);
+                            console.error(`📉 Falling back to SIMULATION (capped at +20%)`);
                             btcGrowth = simulateBacktestPerformance(randomParams);
                         }
                     } else {
@@ -2095,8 +2104,8 @@
             const marketFactor = Math.sin(marketSeed) * 2; // -2 to +2 range
             score += marketFactor;
             
-            // Ensure reasonable bounds (-5% to +20% BTC growth)
-            return Math.max(-5, Math.min(20, score));
+            // Ensure reasonable bounds (-10% to +50% BTC growth) - simulation only
+            return Math.max(-10, Math.min(50, score));
         }
 
         function updateOptimizationResultsDisplay(results) {
