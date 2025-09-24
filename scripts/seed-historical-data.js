@@ -19,7 +19,7 @@ const logger = new Logger('DataSeeder');
 class HistoricalDataSeeder {
     constructor() {
         this.db = new DatabaseService();
-        this.exchange = new ccxt.coinbasepro({
+        this.exchange = new ccxt.coinbaseadvanced({
             enableRateLimit: true,
             timeout: 30000
         });
@@ -46,7 +46,7 @@ class HistoricalDataSeeder {
                 }
             }
 
-            // Fetch historical OHLCV data from Coinbase Pro
+            // Fetch historical OHLCV data from Coinbase Advanced Trade
             logger.info('📈 Fetching historical OHLCV data...');
             const ohlcvData = await this.fetchHistoricalOHLCV(days);
             
