@@ -53,14 +53,10 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dashboard/$1"
+      "source": "/(.*)",
+      "destination": "/dashboard/$1"
     }
   ],
   "headers": [

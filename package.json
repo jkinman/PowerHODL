@@ -10,10 +10,30 @@
     "analyze": "node src/analyzer.js",
     "optimize": "node src/megaOptimizer.js",
     "backtest": "node src/cryptoOnlyBacktest.js",
-    "strategy": "node -e \"import('./src/strategy.js').then(m => console.log('Strategy loaded:', m.default.name))\"",
-    "dev": "nodemon src/index.js",
-    "build": "echo 'No build step required - serverless functions'",
-    "vercel-build": "npm run build"
+    "strategy": "node -e \"import('./src/strategy.js').then(m => console.log('Strategy loaded:', m.default))\"",
+    
+    "dev": "vercel dev",
+    "dev:dashboard": "npx serve dashboard -p 3001",
+    "dev:api": "nodemon src/index.js",
+    "dev:cron": "node api/cron/market-monitor.js",
+    
+    "test": "node test-scripts.js",
+    "test:api": "node -e \"console.log('Testing API endpoints...'); import('./api/signal.js').then(() => console.log('✅ APIs loaded'))\"",
+    "test:dashboard": "echo '🎨 Open dashboard/index.html in browser to test'",
+    "test:all": "npm run test && npm run test:api",
+    
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "logs": "vercel logs",
+    "domains": "vercel domains",
+    
+    "build": "echo '✅ No build step required - serverless functions ready'",
+    "vercel-build": "npm run build",
+    "postinstall": "echo '📦 Dependencies installed. Run npm run dev to start development.'",
+    
+    "clean": "rm -rf .vercel node_modules/.cache",
+    "reset": "npm run clean && npm install",
+    "docs": "echo '📚 API Documentation: see API_DOCUMENTATION.md'"
   },
   "keywords": [
     "crypto",
@@ -38,10 +58,13 @@
     "ws": "^8.14.2",
     "dotenv": "^16.3.1",
     "moment": "^2.29.4",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "vercel": "^32.0.0",
+    "serve": "^14.2.1"
   },
   "engines": {
     "node": ">=16.0.0"
