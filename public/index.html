@@ -1668,13 +1668,41 @@
                     }
                     
                     // Check if this looks like a successful backtest response
-                    if (result.performance && result.timestamp) {
+                    if (result.performance && result.timestamp && result.cryptoAccumulation) {
+                        // Debug the performance data
+                        console.log(`🔍 Performance section:`, result.performance);
+                        console.log(`🔍 Crypto accumulation section:`, result.cryptoAccumulation);
+                        console.log(`🔍 Available metrics:`, {
+                            excessReturn: result.performance.excessReturn,
+                            strategyReturn: result.performance.strategyReturn,
+                            cryptoOutperformance: result.cryptoAccumulation.cryptoOutperformance
+                        });
+                        
+                        // Use cryptoOutperformance for BTC accumulation (our actual goal)
+                        const rawBtcGrowth = result.cryptoAccumulation.cryptoOutperformance;
+                        console.log(`🔍 Raw cryptoOutperformance:`, rawBtcGrowth, typeof rawBtcGrowth);
+                        
+                        // Handle percentage string conversion
+                        let cleanValue = rawBtcGrowth;
+                        if (typeof rawBtcGrowth === 'string' && rawBtcGrowth.includes('%')) {
+                            cleanValue = rawBtcGrowth.replace('%', '');
+                        }
+                        const btcGrowthPercent = parseFloat(cleanValue || 0);
+                        
+                        console.log(`📊 Parsed BTC accumulation: ${btcGrowthPercent}% (from: ${rawBtcGrowth})`);
+                        
+                        // Sanity check
+                        if (Math.abs(btcGrowthPercent) > 100) {
+                            console.warn(`⚠️ HIGH SINGLE BACKTEST RESULT: ${btcGrowthPercent}% - verify this is realistic`);
+                            console.warn(`🔍 Full API response for investigation:`, result);
+                        }
+                        
                         // Convert API response to expected format for displayBacktestResults
                         const adaptedResult = {
                             success: true,
                             data: {
                                 performance: {
-                                    btcGrowthPercent: parseFloat(result.performance.excessReturn || 0),
+                                    btcGrowthPercent: btcGrowthPercent,
                                     winRate: 70, // Mock value - API doesn't return this
                                     maxDrawdown: 5  // Mock value - API doesn't return this
                                 },
@@ -1784,6 +1812,8 @@
                             if (response.ok) {
                                 const result = await response.json();
                                 console.log(`📡 API Response for iteration ${i + 1}:`, result);
+                                console.log(`🔍 Performance section:`, result.performance);
+                                console.log(`🔍 All performance fields:`, Object.keys(result.performance || {}));
                                 
                                 // Check for error in response
                                 if (result.error) {
@@ -1791,9 +1821,30 @@
                                 }
                                 
                                 // Check for successful backtest response
-                                if (result.performance && result.timestamp) {
-                                    btcGrowth = parseFloat(result.performance.excessReturn || 0);
+                                if (result.performance && result.timestamp && result.cryptoAccumulation) {
+                                    // Use cryptoOutperformance instead of excessReturn for BTC accumulation
+                                    const rawBtcGrowth = result.cryptoAccumulation.cryptoOutperformance;
+                                    console.log(`🔍 Raw cryptoOutperformance value:`, rawBtcGrowth, typeof rawBtcGrowth);
+                                    console.log(`🔍 Available metrics:`, {
+                                        excessReturn: result.performance.excessReturn,
+                                        strategyReturn: result.performance.strategyReturn,
+                                        cryptoOutperformance: result.cryptoAccumulation.cryptoOutperformance
+                                    });
+                                    
+                                    // Handle percentage string (remove % and convert)
+                                    let cleanValue = rawBtcGrowth;
+                                    if (typeof rawBtcGrowth === 'string' && rawBtcGrowth.includes('%')) {
+                                        cleanValue = rawBtcGrowth.replace('%', '');
+                                    }
+                                    
+                                    btcGrowth = parseFloat(cleanValue || 0);
+                                    console.log(`📊 Parsed BTC accumulation: ${btcGrowth}% (from: ${rawBtcGrowth})`);
                                     console.log(`✅ Real data success for iteration ${i + 1}: ${btcGrowth.toFixed(2)}%`);
+                                    
+                                    // Sanity check - flag unrealistic results
+                                    if (Math.abs(btcGrowth) > 100) {
+                                        console.warn(`⚠️ HIGH RESULT: ${btcGrowth}% - verify this is realistic`);
+                                    }
                                 } else {
                                     console.error(`❌ Invalid API response for iteration ${i + 1}:`, {
                                         hasError: 'error' in result,
