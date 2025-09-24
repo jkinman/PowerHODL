@@ -1,4 +1,8 @@
-# 🦊 **MetaMask Wallet Setup for PowerHODL**
+# 🦊 **MetaMask Setup for PowerHODL - 2024 Guide**
+
+## 🚀 **Modern Integration (No Infura Required!)**
+
+PowerHODL uses the latest MetaMask SDK (2024) which **no longer requires Infura Project IDs**. This makes setup much simpler and eliminates external dependencies!
 
 ## 📱 **Step 1: Install MetaMask**
 
