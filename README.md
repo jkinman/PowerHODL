@@ -216,17 +216,6 @@ We welcome contributions! Areas where we need help:
 
 ---
 
-## Success Stories
-
-> *"PowerHODL helped me accumulate 12% more BTC in 3 months while I slept."*  
-> **— CryptoWhale42**
-
-> *"The dashboard alone is worth it. Finally, I can monitor my trades like a pro."*  
-> **— DeFiTrader**
-
-> *"1000s of ongoing iterations shows the dedication. This actually works and keeps improving."*  
-> **— AlgoTrader_2024**
-
 ---
 
 ## Ready to Accumulate More BTC?

@@ -732,11 +732,11 @@
                         </div>
                     </div>
 
-                    <!-- Trade Log -->
-                    <div class="trade-log" style="max-height: 200px; overflow-y: auto;">
-                        <h4 style="color: #ffffff; margin-bottom: 10px;">Recent Trades</h4>
-                        <div id="tradeLogContent" style="background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30; padding: 10px;">
-                            <div style="color: #666; text-align: center; padding: 20px;">Run a backtest to see trade history</div>
+                    <!-- Latest Run Parameters & Results -->
+                    <div class="latest-run" style="max-height: 200px; overflow-y: auto;">
+                        <h4 style="color: #ffffff; margin-bottom: 10px;">Latest Run Details</h4>
+                        <div id="latestRunContent" style="background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30; padding: 15px;">
+                            <div style="color: #666; text-align: center; padding: 20px;">Run a backtest to see parameters and results</div>
                         </div>
                     </div>
 
@@ -1710,25 +1710,80 @@
                 backtestChart.update('none');
             }
 
-            // Update trade log
-            if (results.trades) {
-                const tradeLogContent = document.getElementById('tradeLogContent');
-                const recentTrades = results.trades.slice(-10).reverse();
-                
-                tradeLogContent.innerHTML = recentTrades.map(trade => `
-                    <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #2d2d30; font-size: 14px;">
-                        <span style="color: ${trade.action === 'BUY_ETH' ? '#00d4aa' : '#ff6b6b'};">
-                            ${trade.action}
-                        </span>
-                        <span style="color: #b3b3b3;">
-                            ${new Date(trade.date).toLocaleDateString()}
-                        </span>
-                        <span style="color: #fbbf24;">
-                            ${trade.btcGrowth > 0 ? '+' : ''}${trade.btcGrowth.toFixed(4)} BTC
-                        </span>
+            // Update latest run details with parameters and results
+            const params = getBacktestParameters();
+            const timestamp = new Date().toLocaleString();
+            
+            const latestRunHtml = `
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #fbbf24; font-weight: bold; margin-bottom: 8px;">
+                        📊 Run Completed: ${timestamp}
                     </div>
-                `).join('');
-            }
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #ffffff; font-weight: bold; margin-bottom: 8px;">Parameters Tested:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                        <div style="color: #b3b3b3;">Z-Score Threshold:</div>
+                        <div style="color: #fbbf24;">±${params.zScoreThreshold.toFixed(3)}</div>
+                        
+                        <div style="color: #b3b3b3;">Rebalance %:</div>
+                        <div style="color: #fbbf24;">${params.rebalancePercent.toFixed(0)}%</div>
+                        
+                        <div style="color: #b3b3b3;">Lookback Window:</div>
+                        <div style="color: #fbbf24;">${params.lookbackWindow} days</div>
+                        
+                        <div style="color: #b3b3b3;">Transaction Cost:</div>
+                        <div style="color: #fbbf24;">${params.transactionCost.toFixed(2)}%</div>
+                        
+                        <div style="color: #b3b3b3;">Test Period:</div>
+                        <div style="color: #fbbf24;">${params.backtestPeriod} days</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #ffffff; font-weight: bold; margin-bottom: 8px;">Performance Results:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                        <div style="color: #b3b3b3;">BTC Growth:</div>
+                        <div style="color: ${results.performance?.btcGrowthPercent > 0 ? '#00d4aa' : '#ff6b6b'};">
+                            ${results.performance ? `+${results.performance.btcGrowthPercent.toFixed(2)}%` : '--'}
+                        </div>
+                        
+                        <div style="color: #b3b3b3;">Win Rate:</div>
+                        <div style="color: #fbbf24;">
+                            ${results.performance ? `${results.performance.winRate.toFixed(1)}%` : '--'}
+                        </div>
+                        
+                        <div style="color: #b3b3b3;">Total Trades:</div>
+                        <div style="color: #fbbf24;">
+                            ${results.trades ? results.trades.length : '--'}
+                        </div>
+                        
+                        <div style="color: #b3b3b3;">Max Drawdown:</div>
+                        <div style="color: #ff6b6b;">
+                            ${results.performance ? `${results.performance.maxDrawdown.toFixed(2)}%` : '--'}
+                        </div>
+                    </div>
+                </div>
+                
+                ${results.performance?.btcGrowthPercent > 5 ? `
+                <div style="background: rgba(0, 212, 170, 0.1); border: 1px solid #00d4aa; border-radius: 6px; padding: 10px; margin-top: 15px;">
+                    <div style="color: #00d4aa; font-weight: bold; margin-bottom: 5px;">🎯 Strong Performance!</div>
+                    <div style="color: #b3b3b3; font-size: 12px;">
+                        These parameters outperformed the baseline. Consider using them for live trading.
+                    </div>
+                </div>
+                ` : results.performance?.btcGrowthPercent < 0 ? `
+                <div style="background: rgba(255, 107, 107, 0.1); border: 1px solid #ff6b6b; border-radius: 6px; padding: 10px; margin-top: 15px;">
+                    <div style="color: #ff6b6b; font-weight: bold; margin-bottom: 5px;">⚠️ Poor Performance</div>
+                    <div style="color: #b3b3b3; font-size: 12px;">
+                        These parameters underperformed. Try optimization to find better settings.
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('latestRunContent').innerHTML = latestRunHtml;
         }
 
         function displayMockResults() {
