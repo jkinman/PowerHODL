@@ -41,8 +41,8 @@
   },
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/dashboard/$1"
+      "source": "/dashboard",
+      "destination": "/dashboard/index.html"
     }
   ],
   "headers": [
