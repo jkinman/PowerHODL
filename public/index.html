@@ -682,6 +682,19 @@
                         <input type="number" id="startingETH" step="0.1" value="2.0" style="width: 100%; padding: 8px; background: #1a1a1b; color: #ffffff; border: 1px solid #2d2d30; border-radius: 4px;">
                     </div>
 
+                    <!-- Data Source Selection -->
+                    <div class="param-group" style="margin-bottom: 20px; padding: 15px; background: #252526; border-radius: 6px; border: 1px solid #2d2d30;">
+                        <label style="color: #ffffff; font-weight: bold; display: block; margin-bottom: 8px;">Data Source:</label>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <input type="checkbox" id="useRealData" checked style="margin-right: 8px; transform: scale(1.2);">
+                            <label for="useRealData" style="color: #b3b3b3; font-size: 14px; cursor: pointer;">Use Real Historical Data</label>
+                        </div>
+                        <div style="color: #666; font-size: 12px; line-height: 1.4;">
+                            <div style="color: #00d4aa;">✅ <strong>Real Data:</strong> Tests what would have actually happened over the last year</div>
+                            <div style="color: #fbbf24; margin-top: 3px;">⚠️ <strong>Simulation:</strong> Mathematical model (faster but less accurate)</div>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="action-buttons" style="margin-top: 30px;">
                         <button onclick="runSingleBacktest()" style="width: 100%; padding: 12px; background: #00d4aa; color: #000; border: none; border-radius: 6px; font-weight: bold; margin-bottom: 10px; cursor: pointer;">Run Single Backtest</button>
@@ -1596,7 +1609,10 @@
             if (isOptimizing) return;
 
             const params = getBacktestParameters();
+            const useRealData = document.getElementById('useRealData').checked;
+            
             console.log('🧪 Running backtest with parameters:', params);
+            console.log('📊 Data source:', useRealData ? 'Real Historical Data' : 'Mathematical Simulation');
             document.getElementById('backtestStatus').textContent = 'Running backtest...';
             
             // Clear previous results
@@ -1605,45 +1621,53 @@
             document.getElementById('totalTrades').textContent = '--';
             document.getElementById('maxDrawdown').textContent = '--';
             
-            try {
-                const requestBody = {
-                    action: 'run',
-                    parameters: params,
-                    outputFormat: 'btc'
-                };
-                
-                console.log('📡 Sending request:', requestBody);
-                
-                const response = await fetch('/api/backtest', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
+            if (useRealData) {
+                // Use real historical data via API
+                try {
+                    const requestBody = {
+                        action: 'run',
+                        parameters: params,
+                        outputFormat: 'btc'
+                    };
+                    
+                    console.log('📡 Sending request to real backtest API:', requestBody);
+                    
+                    const response = await fetch('/api/backtest', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
 
-                console.log('📊 Response status:', response.status);
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('❌ API Error Response:', errorText);
-                    throw new Error(`API Error (${response.status}): ${errorText.substring(0, 100)}...`);
-                }
+                    console.log('📊 Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('❌ API Error Response:', errorText);
+                        throw new Error(`API Error (${response.status}): ${errorText.substring(0, 100)}...`);
+                    }
 
-                const result = await response.json();
-                console.log('✅ API Result:', result);
-                
-                if (result.success) {
-                    displayBacktestResults(result.data || result);
-                    document.getElementById('backtestStatus').textContent = 'Backtest completed successfully';
-                } else {
-                    throw new Error(result.error || 'Backtest failed - no success flag');
+                    const result = await response.json();
+                    console.log('✅ Real backtest result:', result);
+                    
+                    if (result.success) {
+                        displayBacktestResults(result.data || result);
+                        document.getElementById('backtestStatus').textContent = 'Real backtest completed successfully';
+                    } else {
+                        throw new Error(result.error || 'Backtest failed - no success flag');
+                    }
+                } catch (error) {
+                    console.error('🔥 Real backtest error:', error);
+                    document.getElementById('backtestStatus').textContent = 'Real backtest failed: ' + error.message;
+                    
+                    // Fall back to simulation
+                    console.log('🎭 Falling back to simulation...');
+                    displayMockResults();
                 }
-            } catch (error) {
-                console.error('🔥 Backtest error:', error);
-                document.getElementById('backtestStatus').textContent = 'Error: ' + error.message;
-                
-                // Show mock results for demo purposes
-                console.log('🎭 Showing mock results for demonstration...');
+            } else {
+                // Use mathematical simulation (faster)
+                console.log('🎭 Using mathematical simulation (no real data)');
                 displayMockResults();
+                document.getElementById('backtestStatus').textContent = 'Simulation completed (not real data)';
             }
         }
 
@@ -1695,8 +1719,41 @@
                         txCost: randomParams.transactionCost.toFixed(2) + '%'
                     });
 
-                    // Get deterministic result for these specific parameters
-                    const btcGrowth = simulateBacktestPerformance(randomParams);
+                    // Get result using selected data source
+                    const useRealData = document.getElementById('useRealData').checked;
+                    let btcGrowth;
+                    
+                    if (useRealData) {
+                        // Try real backtest API first
+                        try {
+                            const response = await fetch('/api/backtest', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'run',
+                                    parameters: randomParams,
+                                    outputFormat: 'btc'
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                const result = await response.json();
+                                if (result.success && result.data?.performance?.btcGrowthPercent !== undefined) {
+                                    btcGrowth = result.data.performance.btcGrowthPercent;
+                                } else {
+                                    throw new Error('Invalid API response');
+                                }
+                            } else {
+                                throw new Error(`API error: ${response.status}`);
+                            }
+                        } catch (error) {
+                            console.warn(`⚠️ Real data failed for iteration ${i + 1}, using simulation:`, error.message);
+                            btcGrowth = simulateBacktestPerformance(randomParams);
+                        }
+                    } else {
+                        // Use mathematical simulation
+                        btcGrowth = simulateBacktestPerformance(randomParams);
+                    }
                     
                     // Store this iteration's result
                     const iterationResult = {
