@@ -49,10 +49,22 @@ export default async function handler(req, res) {
             volatility: indicators.volatility.toFixed(4)
         });
 
-        // Step 3: Create market snapshot
+        // Step 3: Create market snapshot with correct field mapping
         const snapshot = {
-            ...marketData,
+            // Map camelCase to snake_case for database
+            eth_price_usd: marketData.ethPriceUsd,
+            btc_price_usd: marketData.btcPriceUsd,
+            eth_btc_ratio: marketData.ethBtcRatio,
+            eth_volume_24h: marketData.ethVolume24h,
+            btc_volume_24h: marketData.btcVolume24h,
+            eth_btc_volume_24h: marketData.ethBtcVolume24h,
+            data_quality: marketData.dataQuality,
+            source: marketData.source,
+            
+            // Technical indicators
             ...indicators,
+            
+            // Timestamp
             collected_at: new Date().toISOString()
         };
 

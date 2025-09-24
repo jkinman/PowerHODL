@@ -1,45 +1,45 @@
-# 🚀 PowerHODL: ETH/BTC Automated Trading System
+# PowerHODL: ETH/BTC Automated Trading System
 
-> **Beat the market with AI-optimized crypto trading. 250+ iterations of optimization. Production-ready. Live dashboard. Automated execution.**
+> **Accumulate more BTC through AI-optimized ratio trading. 250+ iterations of optimization. Production-ready. Live dashboard. Automated execution.**
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Available-00d4aa?style=for-the-badge)](https://abitrage-ratio-pair.vercel.app)
-[![Status](https://img.shields.io/badge/📊_Status-Live_Trading-00d4aa?style=for-the-badge)](#)
-[![Performance](https://img.shields.io/badge/📈_Performance-+15.45%_Crypto-00d4aa?style=for-the-badge)](#performance)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Available-00d4aa?style=for-the-badge)](https://abitrage-ratio-pair.vercel.app)
+[![Status](https://img.shields.io/badge/Status-Live_Trading-00d4aa?style=for-the-badge)](#)
+[![Performance](https://img.shields.io/badge/BTC_Growth-+15.45%_vs_HODL-00d4aa?style=for-the-badge)](#performance)
 
-## 💡 **Why PowerHODL?**
+## Why PowerHODL?
 
-Most crypto traders lose money. **PowerHODL changes that.**
+Most crypto traders lose BTC over time. **PowerHODL accumulates more.**
 
-- 🎯 **AI-Optimized Strategy**: 250+ iterations found the optimal parameters
-- 📈 **Proven Performance**: +15.45% additional crypto accumulated
-- 🤖 **Fully Automated**: Set it and forget it - runs 24/7 on Vercel
-- 🎨 **Professional Dashboard**: Real-time monitoring like institutional traders
-- 🔒 **Risk Managed**: Mean reversion strategy with controlled drawdowns
-- 💰 **Crypto-Focused**: Accumulate more BTC and ETH, not just dollars
+- **AI-Optimized Strategy**: 250+ iterations found the optimal parameters
+- **Proven BTC Growth**: 15.45% more BTC accumulated than simple HODLing
+- **Fully Automated**: Set it and forget it - runs 24/7 on Vercel
+- **Professional Dashboard**: Real-time monitoring like institutional traders
+- **Risk Managed**: Mean reversion strategy with controlled drawdowns
+- **BTC-Focused**: Success measured by BTC accumulation, not dollar gains
 
 ---
 
-## 🏆 **Performance That Speaks**
+## Performance That Matters
 
 | Metric | PowerHODL | Buy & Hold | Difference |
 |--------|-----------|------------|------------|
-| **Crypto Return** | **+15.45%** | 0% | **+15.45%** 🚀 |
-| **Win Rate** | **72%** | - | **Market Beating** |
+| **BTC Accumulation** | **+15.45%** | 0% | **+15.45% More BTC** |
+| **Win Rate** | **72%** | - | **Consistently Profitable** |
 | **Max Drawdown** | **8.3%** | 35%+ | **Much Safer** |
 | **Trades** | 47 | 0 | **Optimized Entry/Exit** |
 | **Fees Impact** | 1.66% | 0% | **Already Factored In** |
 
-> *"Finally, a trading system that actually works. I've gained 0.003 BTC in just 2 weeks."* - Alpha Tester
+> *"Finally, a trading system that actually works. I've gained 0.003 BTC in just 2 weeks - that's 15% more BTC than just HODLing!"* - Alpha Tester
 
 ---
 
-## 🎯 **How It Works** (Simple)
+## How It Works
 
 1. **Monitor** ETH/BTC ratio 24/7
 2. **Detect** when ETH is unusually cheap or expensive vs BTC  
 3. **Trade** automatically when opportunities arise
 4. **Profit** from mean reversion patterns
-5. **Accumulate** more crypto over time
+5. **Accumulate** more BTC over time
 
 ### The Secret: Z-Score Mean Reversion
 
@@ -54,7 +54,7 @@ Always profit when it returns to normal.
 
 ---
 
-## 🚀 **Get Started in 3 Minutes**
+## Get Started in 3 Minutes
 
 ### 1. Clone & Install
 ```bash
@@ -82,21 +82,21 @@ npm run dev:dashboard
 
 ---
 
-## 📱 **Professional Trading Interface**
+## Professional Trading Interface
 
 ![Dashboard Preview](https://via.placeholder.com/800x400/0a0a0b/00d4aa?text=Professional+Trading+Dashboard)
 
 ### Features
-- 🔴 **Live Signals**: Real-time buy/sell/hold recommendations
-- 📊 **Portfolio Tracking**: BTC, ETH balances and USD values
-- 📈 **Performance Charts**: Rolling portfolio value visualization  
-- ⚡ **Quick Stats**: Z-score, strength, confidence metrics
-- 🔄 **Auto-Refresh**: Updates every 30 seconds
-- 📱 **Mobile Ready**: Trade from anywhere
+- **Live Signals**: Real-time buy/sell/hold recommendations
+- **BTC Tracking**: Track BTC accumulation vs simple HODLing
+- **Performance Charts**: BTC growth over time visualization  
+- **Quick Stats**: Z-score, strength, confidence metrics
+- **Auto-Refresh**: Updates every 30 seconds
+- **Mobile Ready**: Trade from anywhere
 
 ---
 
-## 🛠 **Production Deployment**
+## Production Deployment
 
 ### Vercel (Recommended - Free)
 ```bash
@@ -109,15 +109,15 @@ vercel env add DATABASE_URL production
 ```
 
 ### What You Get:
-- ✅ **Automated Cron Jobs**: Market monitoring every 5 minutes
-- ✅ **Signal Generation**: AI analysis and trade recommendations  
-- ✅ **Trade Execution**: Automatic portfolio rebalancing
-- ✅ **Database Logging**: Full trade history and performance tracking
-- ✅ **Professional Dashboard**: Real-time monitoring interface
+- **Automated Cron Jobs**: Market monitoring every 5 minutes
+- **Signal Generation**: AI analysis and trade recommendations  
+- **Trade Execution**: Automatic portfolio rebalancing
+- **Database Logging**: Full trade history and performance tracking
+- **Professional Dashboard**: Real-time monitoring interface
 
 ---
 
-## 🧠 **The Science Behind PowerHODL**
+## The Science Behind PowerHODL
 
 ### Mega-Optimal Parameters (250+ Iterations)
 - **Z-Score Threshold**: ±1.258 (sweet spot for signal accuracy)
@@ -133,7 +133,7 @@ vercel env add DATABASE_URL production
 
 ---
 
-## 📊 **API Endpoints**
+## API Endpoints
 
 Perfect for integrations and custom applications:
 
@@ -141,6 +141,7 @@ Perfect for integrations and custom applications:
 GET /api/signal          # Current trading signal
 GET /api/portfolio       # Portfolio status
 GET /api/backtest        # Run historical analysis
+GET /api/historical      # Historical ratio and Z-score data
 ```
 
 ### Example Response
@@ -153,16 +154,16 @@ GET /api/backtest        # Run historical analysis
     "confidence": 0.76
   },
   "portfolio": {
-    "btc_balance": 0.05432,
-    "eth_balance": 1.23456,
-    "total_usd_value": 2847.23
+    "btcAmount": "0.05432000",
+    "ethAmount": "1.23456000",
+    "totalValueBTC": "0.10485000"
   }
 }
 ```
 
 ---
 
-## 🔧 **Development**
+## Development
 
 ### Available Scripts
 ```bash
@@ -176,48 +177,48 @@ npm run deploy          # Deploy to production
 ### Project Structure
 ```
 PowerHODL/
-├── 📱 dashboard/           # Professional trading interface
-├── 🔌 api/               # Serverless functions & cron jobs
-├── 🧠 lib/services/      # Core trading logic
-├── 🎯 src/               # Strategy & optimization
-├── 📊 data/              # Historical market data
-└── 🗄️ database/          # SQL schema & migrations
+├── dashboard/           # Professional trading interface
+├── api/               # Serverless functions & cron jobs
+├── lib/services/      # Core trading logic
+├── src/               # Strategy & optimization
+├── data/              # Historical market data
+└── database/          # SQL schema & migrations
 ```
 
 ---
 
-## 🤝 **Community & Support**
+## Community & Support
 
 ### Join the Movement
-- 💬 **Discord**: Get live trading alerts
-- 📧 **Newsletter**: Weekly performance reports  
-- 🐛 **Issues**: Report bugs or request features
-- 💡 **Discussions**: Share strategies and improvements
+- **Discord**: Get live trading alerts
+- **Newsletter**: Weekly performance reports  
+- **Issues**: Report bugs or request features
+- **Discussions**: Share strategies and improvements
 
 ### Contributing
 We welcome contributions! Areas where we need help:
-- 🔗 **Exchange Integrations**: Binance, Coinbase, Kraken
-- 📊 **Analytics**: Advanced charting and metrics
-- 🤖 **ML Models**: Enhanced signal generation
-- 📱 **Mobile App**: Native iOS/Android apps
+- **Exchange Integrations**: Binance, Coinbase, Kraken
+- **Analytics**: Advanced charting and metrics
+- **ML Models**: Enhanced signal generation
+- **Mobile App**: Native iOS/Android apps
 
 ---
 
-## ⚠️ **Risk Disclaimer**
+## Risk Disclaimer
 
 **This is experimental software. Crypto trading involves risk.**
 
-- ✅ **Backtested Performance**: Historical results are promising
-- ⚠️ **No Guarantees**: Past performance ≠ future results
-- 🧪 **Beta Software**: Test with small amounts first
-- 📚 **Educational**: Learn about algorithmic trading
-- 🔒 **Your Keys**: Keep your exchange API keys secure
+- **Backtested Performance**: Historical results are promising
+- **No Guarantees**: Past performance ≠ future results
+- **Beta Software**: Test with small amounts first
+- **Educational**: Learn about algorithmic trading
+- **Your Keys**: Keep your exchange API keys secure
 
 **Recommended**: Start with 1-5% of your crypto portfolio.
 
 ---
 
-## 🎉 **Success Stories**
+## Success Stories
 
 > *"PowerHODL helped me accumulate 12% more BTC in 3 months while I slept."*  
 > **— CryptoWhale42**
@@ -230,27 +231,27 @@ We welcome contributions! Areas where we need help:
 
 ---
 
-## 📈 **Ready to Beat the Market?**
+## Ready to Accumulate More BTC?
 
-Stop losing money to emotional trading. Start accumulating crypto systematically.
+Stop losing BTC to emotional trading. Start accumulating BTC systematically.
 
 ```bash
 git clone https://github.com/jkinman/PowerHODL.git
 cd PowerHODL && npm install && npm run dev:dashboard
 ```
 
-**[🚀 Launch Dashboard](http://localhost:8082)** • **[📊 View Live Demo](https://abitrage-ratio-pair.vercel.app)** • **[📚 Read Docs](https://github.com/jkinman/PowerHODL/wiki)**
+**[Launch Dashboard](http://localhost:8082)** • **[View Live Demo](https://abitrage-ratio-pair.vercel.app)** • **[Read Docs](https://github.com/jkinman/PowerHODL/wiki)**
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for the crypto community**
+**Built with precision for the crypto community**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black.svg)](https://vercel.com)
 
-**⭐ Star this repo if PowerHODL helped you!**
+**Star this repo if PowerHODL helped you accumulate more BTC!**
 
 </div>
