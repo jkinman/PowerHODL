@@ -217,8 +217,10 @@ async function main() {
             throw new Error('Database connection failed');
         }
 
-        // Seed 30 days of historical data (good starting point)
-        await seeder.seedHistoricalData(30);
+        // Get days from command line argument, default to 30
+        const days = parseInt(process.argv[2]) || 30;
+        logger.info(`🎯 Seeding ${days} days of historical data...`);
+        await seeder.seedHistoricalData(days);
         
         // Update technical indicators
         await seeder.updateTechnicalIndicators();

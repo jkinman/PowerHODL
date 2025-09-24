@@ -218,11 +218,33 @@ export default async function handler(req, res) {
         }
         
         // Load historical ETH/BTC data for backtesting
-        // Requires cached data for performance (live collection too slow for API)
+        // Load historical data from database (seeded with real Binance data)
         let data;
         try {
-            data = await collector.loadData('eth_btc_data_2025-09-24.json');
-            console.log(`📊 [BACKTEST API] Loaded ${data.length} days of historical data`);
+            const { DatabaseService } = await import('../lib/services/DatabaseService.js');
+            const dbService = new DatabaseService();
+            
+            // Get ALL available historical data for comprehensive backtesting
+            const maxAvailableDays = 2000; // Liberal limit to get all our seeded data
+            const dbData = await dbService.getRecentMarketData(maxAvailableDays);
+            console.log(`📊 [BACKTEST API] Loaded ${dbData.length} days from database (requested: ALL available)`);
+            
+            if (dbData.length > 50) {
+                // Convert database format to analyzer format
+                data = dbData.map(d => ({
+                    timestamp: new Date(d.collected_at),
+                    eth_price: d.eth_price_usd,
+                    btc_price: d.btc_price_usd,
+                    close: d.eth_price_usd / d.btc_price_usd, // ETH/BTC ratio
+                    volume: d.volume_24h || 0
+                }));
+                console.log(`📊 [BACKTEST API] Using ${data.length} days of real Binance data`);
+            } else {
+                // Fallback to cached data if database has insufficient data
+                console.log('📥 [BACKTEST API] Insufficient database data, falling back to cached data...');
+                data = await collector.loadData('eth_btc_data_2025-09-24.json');
+                console.log(`📊 [BACKTEST API] Using ${data.length} days of cached data`);
+            }
         } catch (error) {
             throw new Error(`Historical data not available for backtesting: ${error.message}`);
         }
@@ -254,7 +276,23 @@ export default async function handler(req, res) {
         const startingBTC = 0.01540; // Example starting portfolio in BTC terms
         const buyHoldBTC = startingBTC * (0.5 + 0.5 * (endRatio / startRatio));
         const strategyBTC = startingBTC * (1 + backtest.strategyReturnPercent / 100);
-        const cryptoOutperformance = ((strategyBTC - buyHoldBTC) / buyHoldBTC) * 100;
+        
+        // Handle edge cases where calculations might result in NaN or division by zero
+        let cryptoOutperformance = 0;
+        if (buyHoldBTC > 0 && !isNaN(buyHoldBTC) && !isNaN(strategyBTC)) {
+            cryptoOutperformance = ((strategyBTC - buyHoldBTC) / buyHoldBTC) * 100;
+        } else {
+            console.warn('[BACKTEST API] Invalid crypto accumulation calculation:', {
+                startRatio, endRatio, buyHoldBTC, strategyBTC, strategyReturn: backtest.strategyReturnPercent
+            });
+            // Fallback: use strategy return as approximation
+            cryptoOutperformance = backtest.strategyReturnPercent || 0;
+        }
+        
+        // Ensure result is a valid number
+        if (isNaN(cryptoOutperformance)) {
+            cryptoOutperformance = 0;
+        }
         
         const response = {
             timestamp: new Date().toISOString(),
@@ -301,6 +339,23 @@ export default async function handler(req, res) {
                 recommendation: backtest.strategyReturnPercent > backtest.buyHoldReturnPercent ? 
                     'Strategy outperforms - Recommended for live trading' :
                     'Strategy underperforms - Consider parameter optimization'
+            },
+            portfolioEvolution: {
+                // Complete portfolio evolution for charting (sample every 5th day to show more detail)
+                dates: backtest.portfolio.filter((_, i) => i % 5 === 0).map(p => p.date.toISOString().split('T')[0]),
+                btcValues: backtest.portfolio.filter((_, i) => i % 5 === 0).map(p => p.totalBtcValue),
+                trades: backtest.portfolio.filter(p => p.rebalanced).map(p => ({
+                    date: p.date.toISOString().split('T')[0],
+                    btcValue: p.totalBtcValue,
+                    action: 'rebalance'
+                })),
+                // Debug info to see full data range
+                fullDataRange: {
+                    totalDays: backtest.portfolio.length,
+                    startDate: backtest.portfolio[0].date.toISOString().split('T')[0],
+                    endDate: backtest.portfolio[backtest.portfolio.length - 1].date.toISOString().split('T')[0],
+                    totalTrades: backtest.portfolio.filter(p => p.rebalanced).length
+                }
             }
         };
         
