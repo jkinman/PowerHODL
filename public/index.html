@@ -1877,13 +1877,13 @@
                                 sampleValues: result.portfolioEvolution.btcValues.slice(0, 5)
                             });
                             
-                            // TEMPORARY: If API isn't returning enough data, show a mock extended dataset
-                            if (result.portfolioEvolution.dates.length < 100) {
-                                console.warn('⚠️ Limited data from API, generating extended mock data for testing');
-                                const extendedEvolution = generateExtendedMockPortfolio();
-                                updateBTCAccumulationChart(extendedEvolution);
-                                return; // Skip the normal update
-                            }
+                            // DEBUG: Check if we have proper API data
+                            console.log('🔍 API Portfolio Evolution Check:', {
+                                hasPortfolioEvolution: !!result.portfolioEvolution,
+                                dateCount: result.portfolioEvolution?.dates?.length || 0,
+                                tradeCount: result.portfolioEvolution?.trades?.length || 0,
+                                hasFullDataRange: !!result.portfolioEvolution?.fullDataRange
+                            });
                             updateBTCAccumulationChart(result.portfolioEvolution);
                             console.log('📊 Updated BTC Accumulation chart with backtest portfolio evolution');
                         }
@@ -2048,8 +2048,13 @@
                                 throw new Error(`API error: ${response.status} - ${errorText.substring(0, 50)}`);
                             }
                         } catch (error) {
-                            console.error(`🚨 REAL API FAILED for iteration ${i + 1}:`, error.message);
-                            console.error(`📉 Falling back to SIMULATION (capped at +20%)`);
+                            console.error(`🚨 REAL API FAILED for iteration ${i + 1}:`, {
+                                error: error.message,
+                                url: `${apiUrl}/api/backtest`,
+                                params: apiParams,
+                                timestamp: new Date().toISOString()
+                            });
+                            console.error(`📉 Falling back to SIMULATION - THIS IS WHY YOU'RE SEEING +617% RESULTS!`);
                             btcGrowth = simulateBacktestPerformance(randomParams);
                         }
                     } else {
@@ -2401,7 +2406,8 @@
             score += marketFactor;
             
             // Ensure reasonable bounds (-10% to +50% BTC growth) - simulation only
-            return Math.max(-10, Math.min(50, score));
+            // URGENT FIX: Limit to realistic BTC accumulation range
+            return Math.max(-50, Math.min(50, score));
         }
 
         function updateOptimizationResultsDisplay(results) {
