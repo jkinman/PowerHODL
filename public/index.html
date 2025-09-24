@@ -2054,6 +2054,15 @@
                                     }
                                     
                                     console.log(`✅ Real data success for iteration ${i + 1}: ${btcGrowth.toFixed(2)}%`);
+                                    console.log(`🔍 OPTIMIZATION API SUCCESS DEBUG:`, {
+                                        iteration: i + 1,
+                                        apiParams: apiParams,
+                                        responseTimestamp: result.timestamp,
+                                        dataInfo: result.dataInfo,
+                                        rawCryptoOutperformance: result.cryptoAccumulation.cryptoOutperformance,
+                                        parsedBtcGrowth: btcGrowth,
+                                        willUseFallback: false
+                                    });
                                     
                                     // Sanity check - flag unrealistic results
                                     if (Math.abs(btcGrowth) > 100) {
@@ -2086,6 +2095,13 @@
                             console.error(`📉 Falling back to SIMULATION - THIS IS WHY YOU'RE SEEING +617% RESULTS!`);
                             console.error(`❌ The API should be working! Check the browser Network tab for HTTP errors.`);
                             btcGrowth = simulateBacktestPerformance(randomParams);
+                            console.log(`🔍 OPTIMIZATION SIMULATION FALLBACK DEBUG:`, {
+                                iteration: i + 1,
+                                apiParams: apiParams,
+                                simulationResult: btcGrowth,
+                                errorCause: error.message,
+                                willUseSimulation: true
+                            });
                         }
                     } else {
                         // Use mathematical simulation
