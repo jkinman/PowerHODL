@@ -77,6 +77,9 @@
  * @since 2024-09-24
  */
 
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import ETHBTCDataCollector from '../src/dataCollector.js';
 import MegaOptimalStrategy from '../src/strategy.js';
 
@@ -121,22 +124,27 @@ export default async function handler(req, res) {
         console.log('🔍 [SIGNAL API] Generating trading signal...');
         const startTime = Date.now();
         
-        // Initialize data collector and mega-optimal strategy
-        // DataCollector: Multi-source ETH/BTC data from Binance, Kraken, Coinbase
+        // Initialize database service and mega-optimal strategy
+        // DatabaseService: Live market data from database
         // Strategy: 250-iteration optimized parameters for maximum BTC accumulation
-        const collector = new ETHBTCDataCollector();
+        const { DatabaseService } = await import('../lib/services/DatabaseService.js');
+        const dbService = new DatabaseService();
         const strategy = new MegaOptimalStrategy();
         
-        // Load historical ETH/BTC data for Z-score calculation
-        // Attempts to load cached data first, then collects fresh data if needed
+        // Load historical ETH/BTC data from database for Z-score calculation
         let data;
         try {
-            data = await collector.loadData('eth_btc_data_2025-09-24.json');
-            console.log(`📊 [SIGNAL API] Loaded ${data.length} days of cached data`);
+            data = await dbService.getRecentMarketData(30); // Get last 30 days
+            console.log(`📊 [SIGNAL API] Loaded ${data.length} days of database data`);
+            
+            if (data.length === 0) {
+                throw new Error('No market data found in database');
+            }
         } catch (error) {
-            console.log('📥 [SIGNAL API] Cached data unavailable, collecting fresh data...');
-            // This may take 10-30 seconds for multi-exchange data collection
-            data = await collector.collectData();
+            console.log('📥 [SIGNAL API] Database data unavailable, falling back to cached data...');
+            // Fallback to cached data if database is unavailable
+            const collector = new ETHBTCDataCollector();
+            data = await collector.loadData('eth_btc_data_2025-09-24.json');
             console.log(`📊 [SIGNAL API] Collected ${data.length} days of fresh data`);
         }
         
@@ -151,8 +159,8 @@ export default async function handler(req, res) {
         
         // Extract current market state and calculate ETH/BTC ratio
         const latestData = data[data.length - 1];
-        const currentRatio = latestData.eth_price / latestData.btc_price;
-        const historicalRatios = data.map(d => d.eth_price / d.btc_price);
+        const currentRatio = latestData.eth_price_usd / latestData.btc_price_usd;
+        const historicalRatios = data.map(d => d.eth_price_usd / d.btc_price_usd);
         
         console.log(`📈 [SIGNAL API] Current ETH/BTC ratio: ${currentRatio.toFixed(6)}`);
         
@@ -166,9 +174,9 @@ export default async function handler(req, res) {
             timestamp: new Date().toISOString(),
             currentMarket: {
                 ethBtcRatio: currentRatio,
-                ethPrice: latestData.eth_price,
-                btcPrice: latestData.btc_price,
-                dataAge: new Date() - new Date(latestData.timestamp)
+                ethPrice: latestData.eth_price_usd,
+                btcPrice: latestData.btc_price_usd,
+                dataAge: new Date() - new Date(latestData.collected_at)
             },
             signal: {
                 action: signal.action,
@@ -195,7 +203,7 @@ export default async function handler(req, res) {
         response.metadata = {
             processingTimeMs: processingTime,
             dataPoints: data.length,
-            dataSource: 'cached', // or 'fresh' if collected
+            dataSource: data[0]?.created_at ? 'database' : 'cached',
             apiVersion: '1.0.0'
         };
         

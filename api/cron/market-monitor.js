@@ -7,7 +7,7 @@
  * - Store market snapshot in database
  * - Trigger signal generation if conditions are met
  * 
- * Schedule: */5 * * * * (every 5 minutes)
+ * Schedule: Every 5 minutes (cron format)
  */
 
 import { MarketDataService } from '../../lib/services/MarketDataService.js';
@@ -39,11 +39,13 @@ export default async function handler(req, res) {
             btcPrice: marketData.btcPriceUsd
         });
 
-        // Step 2: Calculate technical indicators
-        const indicators = await marketService.calculateTechnicalIndicators(marketData);
+        // Step 2: Calculate technical indicators (with historical data if available)
+        const historicalData = await dbService.getRecentMarketData(30);
+        const indicators = await marketService.calculateTechnicalIndicators(marketData, historicalData);
         logger.info('📈 Technical indicators calculated', {
-            zScore: indicators.zScore.toFixed(4),
-            sma15: indicators.sma15.toFixed(6),
+            dataPoints: historicalData.length,
+            zScore: indicators.zScore ? indicators.zScore.toFixed(4) : 'N/A',
+            sma15: indicators.sma15 ? indicators.sma15.toFixed(6) : 'N/A',
             volatility: indicators.volatility.toFixed(4)
         });
 

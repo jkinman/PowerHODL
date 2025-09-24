@@ -141,6 +141,9 @@
                     const signalResponse = await fetch('/api/signal');
                     const signalData = await signalResponse.json();
                     
+                    console.log('Signal API Response:', signalData);
+                    console.log('Current Market Data:', signalData.currentMarket);
+                    
                     if (signalResponse.ok) {
                         setSignalData(signalData);
                         setSystemStatus('online');
@@ -184,7 +187,12 @@
 
                 } catch (error) {
                     console.error('Dashboard load error:', error);
-                    setError(error.message);
+                    console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        name: error.name
+                    });
+                    setError(`Dashboard Error: ${error.message}`);
                     setSystemStatus('offline');
                 }
             };
@@ -256,13 +264,13 @@
                                                 </div>
                                             </div>
                                             <div className="content u-text-center mb-2">
-                                                <div className="metric-value">{signalData.currentMarket?.ethBtcRatio?.toFixed(6) || '--'}</div>
+                                                <div className="metric-value">{signalData.currentMarket?.ethBtcRatio ? signalData.currentMarket.ethBtcRatio.toFixed(6) : '--'}</div>
                                                 <p className="text-gray-600 text-xs uppercase">ETH/BTC Ratio</p>
                                             </div>
                                             <div className="row">
                                                 <div className="col-6 u-text-center">
                                                     <div className="u-text-lg font-bold text-blue-600">
-                                                        {signalData.signal?.zScore?.toFixed(3) || '--'}
+                                                        {signalData.signal?.zScore ? signalData.signal.zScore.toFixed(3) : '--'}
                                                     </div>
                                                     <p className="text-gray-600 text-xs">Z-Score</p>
                                                 </div>
@@ -392,7 +400,7 @@
                                         <div className="space-y-3">
                                             <div className="content u-text-center">
                                                 <div className="u-text-lg font-bold text-purple-600">
-                                                    {signalData.strategy.zScoreThreshold?.toFixed(3) || '--'}
+                                                    {signalData.strategy?.zScoreThreshold ? signalData.strategy.zScoreThreshold.toFixed(3) : '--'}
                                                 </div>
                                                 <p className="text-gray-600 text-xs uppercase">Z-Score Threshold</p>
                                             </div>

@@ -7,7 +7,7 @@
  * - Store signals in database
  * - Trigger trade execution for strong signals
  * 
- * Schedule: */5 * * * * (every 5 minutes)
+ * Schedule: Every 5 minutes (cron format)
  */
 
 import { SignalGenerationService } from '../../lib/services/SignalGenerationService.js';

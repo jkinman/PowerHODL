@@ -7,7 +7,7 @@
  * - Record trade results and update portfolio
  * - Handle errors and risk management
  * 
- * Schedule: */5 * * * * (every 5 minutes)
+ * Schedule: Every 5 minutes (cron format)
  */
 
 import { TradeExecutionService } from '../../lib/services/TradeExecutionService.js';
