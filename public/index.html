@@ -1789,7 +1789,8 @@
                     const apiParams = {
                         rebalanceThreshold: params.rebalancePercent / 100, // Convert 50% to 0.5
                         transactionCost: params.transactionCost / 100,     // Convert 1.66% to 0.0166
-                        zScoreThreshold: params.zScoreThreshold
+                        zScoreThreshold: params.zScoreThreshold,
+                        backtestPeriod: params.backtestPeriod || "ALL"    // Send period to limit data range
                     };
                     
                     console.log('🔄 Converting parameters:', {
@@ -1995,7 +1996,8 @@
                             const apiParams = {
                                 rebalanceThreshold: randomParams.rebalancePercent / 100,
                                 transactionCost: randomParams.transactionCost / 100,
-                                zScoreThreshold: randomParams.zScoreThreshold
+                                zScoreThreshold: randomParams.zScoreThreshold,
+                                backtestPeriod: document.getElementById('backtestPeriod').value || "ALL"
                             };
                             
                             const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';

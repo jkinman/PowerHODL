@@ -173,7 +173,7 @@ export default async function handler(req, res) {
         let parameters = { ...strategy.parameters }; // Clone to avoid mutation
         
         if (req.method === 'POST' && req.body) {
-            const { rebalanceThreshold, transactionCost, zScoreThreshold } = req.body;
+            const { rebalanceThreshold, transactionCost, zScoreThreshold, backtestPeriod } = req.body;
             
             // Validate and apply custom parameters with bounds checking
             if (rebalanceThreshold !== undefined) {
@@ -224,10 +224,20 @@ export default async function handler(req, res) {
             const { DatabaseService } = await import('../lib/services/DatabaseService.js');
             const dbService = new DatabaseService();
             
-            // Get ALL available historical data for comprehensive backtesting
-            const maxAvailableDays = 2000; // Liberal limit to get all our seeded data
-            const dbData = await dbService.getRecentMarketData(maxAvailableDays);
-            console.log(`📊 [BACKTEST API] Loaded ${dbData.length} days from database (requested: ALL available)`);
+            // Determine backtest period from request
+            let requestedDays;
+            if (req.method === 'POST' && req.body && req.body.backtestPeriod) {
+                if (req.body.backtestPeriod === "ALL") {
+                    requestedDays = 2000; // All available data
+                } else {
+                    requestedDays = parseInt(req.body.backtestPeriod) || 365; // Default 1 year
+                }
+            } else {
+                requestedDays = 2000; // Default to all data for GET requests
+            }
+            
+            const dbData = await dbService.getRecentMarketData(requestedDays);
+            console.log(`📊 [BACKTEST API] Loaded ${dbData.length} days from database (requested: ${requestedDays} days)`);
             
             if (dbData.length > 50) {
                 // Convert database format to analyzer format
