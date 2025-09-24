@@ -28,7 +28,7 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { MegaOptimalStrategy } from '../src/strategy.js';
+import MegaOptimalStrategy from '../src/strategy.js';
 import { TechnicalIndicators } from '../lib/utils/TechnicalIndicators.js';
 
 export default async function handler(req, res) {
@@ -50,6 +50,11 @@ export default async function handler(req, res) {
 
     try {
         console.log('📊 [HISTORICAL API] Fetching historical data for charts...');
+        console.log('🔧 [HISTORICAL API] Environment check:', {
+            hasDbUrl: !!process.env.DATABASE_URL,
+            nodeEnv: process.env.NODE_ENV
+        });
+        
         const startTime = Date.now();
         
         // Query parameters
@@ -57,9 +62,12 @@ export default async function handler(req, res) {
         const maxDays = 90; // Limit to prevent performance issues
         const requestedDays = Math.min(days, maxDays);
         
+        console.log(`📊 [HISTORICAL API] Requesting ${requestedDays} days of data`);
+        
         // Try to get data from database first
         let historicalData;
         try {
+            console.log('🔄 [HISTORICAL API] Attempting database connection...');
             const { DatabaseService } = await import('../lib/services/DatabaseService.js');
             const dbService = new DatabaseService();
             
@@ -70,6 +78,10 @@ export default async function handler(req, res) {
                 throw new Error('No database data available');
             }
         } catch (dbError) {
+            console.error('❌ [HISTORICAL API] Database error:', {
+                message: dbError.message,
+                stack: dbError.stack?.substring(0, 200)
+            });
             console.log('📥 [HISTORICAL API] Database unavailable, using cached data...');
             
             // Fallback to cached data
