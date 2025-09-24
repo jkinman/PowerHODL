@@ -68,17 +68,23 @@ export default async function handler(req, res) {
 
         // Step 4: Store signal in database
         const signalRecord = {
-            portfolio_id: portfolio.id,
-            signal_type: signal.action,
+            action: signal.action,
+            should_trade: signal.shouldTrade,
             z_score: signal.zScore,
             confidence: signal.confidence,
-            strength: signal.strength,
+            signal_strength: signal.strength || Math.abs(signal.zScore || 0),
             eth_btc_ratio: latestMarket.eth_btc_ratio,
-            mean_ratio: signal.meanRatio,
-            std_dev: signal.stdDev,
-            should_trade: signal.shouldTrade,
-            reasoning: signal.reasoning,
-            generated_at: new Date().toISOString()
+            reasoning: signal.reasoning || `${signal.action} signal based on Z-score ${signal.zScore}`,
+            strategy_params: {
+                zScoreThreshold: 1.257672,
+                rebalanceThreshold: 0.49792708,
+                lookbackWindow: 15
+            },
+            market_conditions: {
+                dataPoints: marketHistory.length,
+                latestRatio: latestMarket.eth_btc_ratio
+            },
+            created_at: new Date().toISOString()
         };
 
         const savedSignal = await dbService.insertTradingSignal(signalRecord);
