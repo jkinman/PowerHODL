@@ -94,6 +94,39 @@ class MegaOptimalStrategy {
     }
 
     /**
+     * Generate trading signal - alias for getSignal to match SignalGenerationService interface
+     */
+    generateSignal(data) {
+        const { currentRatio, portfolio } = data;
+        
+        // For now, use a simplified approach since we need historical data differently
+        // This will be enhanced when the full pipeline is working
+        const signal = {
+            action: 'HOLD',
+            shouldTrade: false,
+            confidence: 0.5,
+            zScore: data.zScore || 0,
+            reasoning: 'Simplified signal generation for cron job compatibility'
+        };
+
+        // Apply mega-optimal thresholds
+        if (Math.abs(data.zScore || 0) > this.parameters.zScoreThreshold) {
+            signal.shouldTrade = true;
+            signal.confidence = Math.min(Math.abs(data.zScore || 0) / this.parameters.zScoreThreshold, 1.0);
+            
+            if ((data.zScore || 0) > this.parameters.zScoreThreshold) {
+                signal.action = 'SELL_ETH_BUY_BTC';
+                signal.reasoning = 'Z-score indicates ETH is expensive relative to BTC';
+            } else {
+                signal.action = 'BUY_ETH_SELL_BTC';
+                signal.reasoning = 'Z-score indicates ETH is cheap relative to BTC';
+            }
+        }
+
+        return signal;
+    }
+
+    /**
      * Calculate current portfolio value in BTC terms
      */
     getPortfolioValueBTC(currentRatio) {

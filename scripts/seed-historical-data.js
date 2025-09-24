@@ -19,7 +19,7 @@ const logger = new Logger('DataSeeder');
 class HistoricalDataSeeder {
     constructor() {
         this.db = new DatabaseService();
-        this.exchange = new ccxt.binance({
+        this.exchange = new ccxt.coinbasepro({
             enableRateLimit: true,
             timeout: 30000
         });
@@ -46,7 +46,7 @@ class HistoricalDataSeeder {
                 }
             }
 
-            // Fetch historical OHLCV data from Binance
+            // Fetch historical OHLCV data from Coinbase Pro
             logger.info('📈 Fetching historical OHLCV data...');
             const ohlcvData = await this.fetchHistoricalOHLCV(days);
             
@@ -82,8 +82,8 @@ class HistoricalDataSeeder {
             const ohlcv = await this.exchange.fetchOHLCV(symbol, timeframe, since, limit);
             
             // Also fetch USD prices for context
-            const ethUsdOhlcv = await this.exchange.fetchOHLCV('ETH/USDT', timeframe, since, limit);
-            const btcUsdOhlcv = await this.exchange.fetchOHLCV('BTC/USDT', timeframe, since, limit);
+            const ethUsdOhlcv = await this.exchange.fetchOHLCV('ETH/USD', timeframe, since, limit);
+            const btcUsdOhlcv = await this.exchange.fetchOHLCV('BTC/USD', timeframe, since, limit);
 
             // Combine the data
             return ohlcv.map((candle, index) => ({
