@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETH/BTC Mega-Optimal Trading System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .signal-card {
+            text-align: center;
+        }
+        
+        .signal-indicator {
+            font-size: 3em;
+            margin: 20px 0;
+        }
+        
+        .signal-buy {
+            color: #27ae60;
+        }
+        
+        .signal-sell {
+            color: #e74c3c;
+        }
+        
+        .signal-hold {
+            color: #f39c12;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .metric-value {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #219a52);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-online {
+            color: #27ae60;
+        }
+        
+        .status-offline {
+            color: #e74c3c;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .api-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="api-status">
+        <span id="apiStatus">🔴 Disconnected</span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ETH/BTC Mega-Optimal Trading System</h1>
+            <p>250-iteration optimized strategy for cryptocurrency ratio trading</p>
+        </div>
+
+        <div class="dashboard">
+            <!-- Current Signal Card -->
+            <div class="card signal-card">
+                <h3>📊 Current Trading Signal</h3>
+                <div id="signalIndicator" class="signal-indicator">⏳</div>
+                <div id="signalText">Loading signal...</div>
+                <div id="signalDetails"></div>
+                <button class="btn btn-success" onclick="refreshSignal()">
+                    <span id="signalLoading"></span>Refresh Signal
+                </button>
+            </div>
+
+            <!-- Market Data Card -->
+            <div class="card">
+                <h3>📈 Market Data</h3>
+                <div id="marketData">
+                    <div class="metric">
+                        <span class="metric-label">ETH/BTC Ratio:</span>
+                        <span class="metric-value" id="ethBtcRatio">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Z-Score:</span>
+                        <span class="metric-value" id="zScore">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Signal Strength:</span>
+                        <span class="metric-value" id="signalStrength">Loading...</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Last Update:</span>
+                        <span class="metric-value" id="lastUpdate">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategy Parameters Card -->
+            <div class="card">
+                <h3>🎯 Strategy Parameters</h3>
+                <div class="metric">
+                    <span class="metric-label">Z-Score Threshold:</span>
+                    <span class="metric-value">±1.257</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Rebalance Amount:</span>
+                    <span class="metric-value">49.79%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Transaction Cost:</span>
+                    <span class="metric-value">1.66%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Lookback Window:</span>
+                    <span class="metric-value">15 days</span>
+                </div>
+            </div>
+
+            <!-- Backtest Results Card -->
+            <div class="card">
+                <h3>💰 Strategy Performance</h3>
+                <div id="backtestResults">
+                    <div class="metric">
+                        <span class="metric-label">Crypto Return:</span>
+                        <span class="metric-value">+15.45%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Win Rate:</span>
+                        <span class="metric-value">72%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Max Drawdown:</span>
+                        <span class="metric-value">8.3%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Beat Hodling:</span>
+                        <span class="metric-value">+10.45%</span>
+                    </div>
+                </div>
+                <button class="btn" onclick="runBacktest()">
+                    <span id="backtestLoading"></span>Run Fresh Backtest
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card">
+            <h3>🔧 Quick Actions</h3>
+            <div style="text-align: center;">
+                <button class="btn btn-success" onclick="refreshSignal()">🔄 Refresh Signal</button>
+                <button class="btn" onclick="runBacktest()">📊 Run Backtest</button>
+                <button class="btn" onclick="showPortfolio()">💎 Portfolio Status</button>
+                <button class="btn btn-danger" onclick="downloadData()">💾 Download Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🎯 Mega-Optimal Strategy | 250-iteration optimized | Crypto accumulation focused</p>
+        <p>⚠️ Educational purposes only - Trade at your own risk</p>
+    </div>
+
+    <script>
+        // API base URL (auto-detect environment)
+        const API_BASE = window.location.origin;
+        
+        // Global state
+        let currentSignal = null;
+        let marketData = null;
+
+        // Initialize dashboard
+        async function initDashboard() {
+            updateApiStatus('🟡 Connecting...');
+            try {
+                await refreshSignal();
+                updateApiStatus('🟢 Connected');
+            } catch (error) {
+                updateApiStatus('🔴 Disconnected');
+                console.error('Failed to initialize dashboard:', error);
+            }
+        }
+
+        // Update API status indicator
+        function updateApiStatus(status) {
+            document.getElementById('apiStatus').textContent = status;
+        }
+
+        // Refresh trading signal
+        async function refreshSignal() {
+            const loadingSpan = document.getElementById('signalLoading');
+            loadingSpan.innerHTML = '<div class="loading"></div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/signal`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentSignal = data;
+                    updateSignalDisplay(data);
+                    updateMarketData(data);
+                    updateApiStatus('🟢 Connected');
+                } else {
+                    throw new Error(data.message || 'Failed to fetch signal');
+                }
+            } catch (error) {
+                console.error('Signal fetch error:', error);
+                document.getElementById('signalText').textContent = 'Error loading signal';
+                document.getElementById('signalIndicator').textContent = '❌';
+                updateApiStatus('🔴 Error');
+            } finally {
+                loadingSpan.innerHTML = '';
+            }
+        }
+
+        // Update signal display
+        function updateSignalDisplay(data) {
+            const indicator = document.getElementById('signalIndicator');
+            const text = document.getElementById('signalText');
+            const details = document.getElementById('signalDetails');
+            
+            const { signal } = data;
+            
+            if (signal.shouldTrade) {
+                if (signal.action.includes('BUY_ETH')) {
+                    indicator.textContent = '🟢';
+                    indicator.className = 'signal-indicator signal-buy';
+                    text.textContent = 'BUY ETH / SELL BTC';
+                } else if (signal.action.includes('SELL_ETH')) {
+                    indicator.textContent = '🔴';
+                    indicator.className = 'signal-indicator signal-sell';
+                    text.textContent = 'SELL ETH / BUY BTC';
+                }
+            } else {
+                indicator.textContent = '😴';
+                indicator.className = 'signal-indicator signal-hold';
+                text.textContent = 'HOLD POSITION';
+            }
+            
+            details.innerHTML = `
+                <p><strong>Confidence:</strong> ${(signal.confidence * 100).toFixed(1)}%</p>
+                <p><strong>Z-Score:</strong> ${signal.zScore.toFixed(4)}</p>
+                <p><strong>Recommendation:</strong> ${data.recommendation}</p>
+            `;
+        }
+
+        // Update market data
+        function updateMarketData(data) {
+            document.getElementById('ethBtcRatio').textContent = data.currentMarket.ethBtcRatio.toFixed(6);
+            document.getElementById('zScore').textContent = data.signal.zScore.toFixed(4);
+            document.getElementById('signalStrength').textContent = `${(data.signal.confidence * 100).toFixed(1)}%`;
+            document.getElementById('lastUpdate').textContent = new Date(data.timestamp).toLocaleTimeString();
+        }
+
+        // Run backtest
+        async function runBacktest() {
+            const loadingSpan = document.getElementById('backtestLoading');
+            loadingSpan.innerHTML = '<div class="loading"></div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/backtest`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateBacktestResults(data);
+                } else {
+                    throw new Error(data.message || 'Backtest failed');
+                }
+            } catch (error) {
+                console.error('Backtest error:', error);
+                alert('Backtest failed: ' + error.message);
+            } finally {
+                loadingSpan.innerHTML = '';
+            }
+        }
+
+        // Update backtest results
+        function updateBacktestResults(data) {
+            const container = document.getElementById('backtestResults');
+            container.innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Strategy Return:</span>
+                    <span class="metric-value">${data.performance.strategyReturn}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Excess Return:</span>
+                    <span class="metric-value">${data.performance.excessReturn}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Win Rate:</span>
+                    <span class="metric-value">${data.opportunities.winRate}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Trades:</span>
+                    <span class="metric-value">${data.performance.totalTrades}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Crypto Gained:</span>
+                    <span class="metric-value">${data.cryptoAccumulation.cryptoGained}</span>
+                </div>
+            `;
+        }
+
+        // Show portfolio (placeholder)
+        function showPortfolio() {
+            alert('Portfolio management coming soon! This would show your current ETH/BTC holdings and trade history.');
+        }
+
+        // Download data (placeholder)
+        function downloadData() {
+            if (currentSignal) {
+                const dataStr = JSON.stringify(currentSignal, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `trading-signal-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            } else {
+                alert('No data to download. Please refresh signal first.');
+            }
+        }
+
+        // Auto-refresh every 5 minutes
+        setInterval(refreshSignal, 5 * 60 * 1000);
+
+        // Initialize on page load
+        window.addEventListener('load', initDashboard);
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "functions": {
+    "api/signal.js": {
+      "maxDuration": 30
+    },
+    "api/backtest.js": {
+      "maxDuration": 60
+    },
+    "api/portfolio.js": {
+      "maxDuration": 30
+    },
+    "api/cron/market-monitor.js": {
+      "maxDuration": 30
+    },
+    "api/cron/signal-generator.js": {
+      "maxDuration": 30
+    },
+    "api/cron/trade-executor.js": {
+      "maxDuration": 60
+    },
+    "api/cron/data-collector.js": {
+      "maxDuration": 45
+    },
+    "api/cron/performance-calculator.js": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/market-monitor",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/signal-generator", 
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/trade-executor",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/data-collector",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/performance-calculator",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dashboard/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/api/cron/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    }
+  ]
+}
