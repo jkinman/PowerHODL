@@ -48,6 +48,18 @@ class PowerHODLApp {
         this.dashboardManager.setChartManager(this.chartManager);
         console.log('🎛️ Dashboard Manager initialized');
 
+        // Initialize 3D visualization
+        window.threeDViz = new window.ThreeDVisualization();
+        console.log('🎯 3D Visualization initialized');
+
+        // Initialize strategy presets
+        window.strategyPresets = new window.StrategyPresets();
+        console.log('📋 Strategy Presets initialized');
+
+        // Initialize backtest results formatter
+        window.backtestResults = new window.BacktestResults();
+        console.log('📊 Backtest Results initialized');
+
         // Setup global event handlers
         this.setupGlobalEventHandlers();
         
@@ -71,6 +83,8 @@ class PowerHODLApp {
         
         // Make chart demo function available
         window.showExtendedDemo = () => this.showExtendedDemo();
+        
+        // Note: loadPreset is now handled by StrategyPresets module directly
         
         // Global error handler
         window.addEventListener('error', (event) => {
@@ -170,6 +184,11 @@ class PowerHODLApp {
             
             // Update UI with results
             this.dashboardManager.updateOptimizationResultsDisplay(optimizationResult.results);
+            
+            // Share results with 3D visualization
+            if (window.threeDViz) {
+                window.threeDViz.setOptimizationResults(optimizationResult.results);
+            }
             
             // Update best result display
             if (optimizationResult.bestResult) {

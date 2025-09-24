@@ -462,10 +462,35 @@ class DashboardManager {
         if (elements.maxDrawdown) elements.maxDrawdown.textContent = `${result.maxDrawdown.toFixed(2)}%`;
         if (elements.backtestStatus) elements.backtestStatus.textContent = 'Backtest completed successfully';
 
-        // Update chart if portfolio evolution is available
+        // Update charts if portfolio evolution is available
         if (result.portfolioEvolution && this.chartManager) {
             this.chartManager.updateBTCAccumulationChart(result.portfolioEvolution);
+            this.chartManager.updateBacktestChart(result.portfolioEvolution);
         }
+
+        // Update detailed results section
+        this.updateLatestRunDetails(result);
+    }
+
+    /**
+     * Update latest run detailed parameters and results (delegated to BacktestResults module)
+     */
+    updateLatestRunDetails(result) {
+        if (window.backtestResults) {
+            const params = result.parameters || this.getBacktestParameters();
+            window.backtestResults.updateLatestRunDetails(result, params);
+        }
+    }
+
+    /**
+     * Load parameter presets (delegated to StrategyPresets module)
+     */
+    loadPreset(presetName) {
+        if (window.strategyPresets) {
+            return window.strategyPresets.loadPreset(presetName);
+        }
+        console.warn('StrategyPresets module not available');
+        return false;
     }
 }
 

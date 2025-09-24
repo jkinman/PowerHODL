@@ -222,11 +222,22 @@
                         </label>
                     </div>
 
+                    <!-- Parameter Presets -->
+                    <div style="margin-top: 20px;">
+                        <label class="form-label">Quick Presets</label>
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <button onclick="loadPreset('conservative')" class="btn btn-secondary" style="text-align: left; font-size: 12px;">Conservative</button>
+                            <button onclick="loadPreset('megaOptimal')" class="btn btn-secondary" style="text-align: left; font-size: 12px;">Mega-Optimal (Current)</button>
+                            <button onclick="loadPreset('aggressive')" class="btn btn-secondary" style="text-align: left; font-size: 12px;">Aggressive</button>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
                         <button class="btn" id="runSingleBacktest">🧪 Run Single Backtest</button>
                         <button class="btn btn-secondary" id="runOptimization10">🔄 Optimize (10 iterations)</button>
                         <button class="btn btn-secondary" id="runOptimization100">🚀 Optimize (100 iterations)</button>
+                        <button class="btn" onclick="open3DVisualization()" style="background: #8b5cf6; color: #fff;">🎯 3D Parameter Landscape</button>
                     </div>
                 </div>
 
@@ -259,6 +270,22 @@
                         </div>
                     </div>
 
+                    <!-- Performance Chart -->
+                    <div style="margin-top: 20px;">
+                        <h5 style="margin-bottom: 10px; color: #00d4aa;">BTC Accumulation Over Time</h5>
+                        <div style="position: relative; height: 250px; width: 100%; background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30;">
+                            <canvas id="backtestChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Latest Run Parameters & Results -->
+                    <div style="margin-top: 20px;">
+                        <h5 style="margin-bottom: 10px; color: #00d4aa;">Latest Run Parameters & Results</h5>
+                        <div id="latestRunContent" style="background: #1a1a1b; border-radius: 6px; border: 1px solid #2d2d30; padding: 15px; max-height: 200px; overflow-y: auto;">
+                            <div style="color: #666; text-align: center; padding: 20px;">Run a backtest to see detailed parameters and results</div>
+                        </div>
+                    </div>
+
                     <!-- Optimization Progress -->
                     <div id="optimizationProgress" style="display: none; margin-top: 20px;">
                         <h5 style="margin-bottom: 10px;">Optimization Progress</h5>
@@ -283,11 +310,86 @@
         </div>
     </div>
 
+    <!-- 3D Parameter Visualization Modal -->
+    <div id="threeDVisualization" class="modal" style="display: none;">
+        <div class="modal-content" style="width: 95%; max-width: 1400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">🎯 3D Parameter Landscape</h3>
+                <button class="close" onclick="close3DVisualization()">&times;</button>
+            </div>
+            
+            <div style="padding: 20px;">
+                <!-- Controls -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; padding: 15px; background: #252526; border-radius: 8px; border: 1px solid #2d2d30;">
+                    <div>
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Fixed Lookback Window:</label>
+                        <input type="range" id="viz3d-lookback" min="5" max="60" value="15" style="width: 100%; margin-bottom: 5px;">
+                        <span id="viz3d-lookback-value" style="color: #fbbf24; font-weight: bold;">15 days</span>
+                    </div>
+                    <div>
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Fixed Transaction Cost:</label>
+                        <input type="range" id="viz3d-txcost" min="0" max="5" step="0.1" value="1.66" style="width: 100%; margin-bottom: 5px;">
+                        <span id="viz3d-txcost-value" style="color: #fbbf24; font-weight: bold;">1.66%</span>
+                    </div>
+                    <div>
+                        <label style="color: #b3b3b3; display: block; margin-bottom: 5px;">Surface Resolution:</label>
+                        <select id="viz3d-resolution" style="width: 100%; padding: 5px; background: #1a1a1b; color: #ffffff; border: 1px solid #2d2d30; border-radius: 4px;">
+                            <option value="low">Low (10x10)</option>
+                            <option value="medium" selected>Medium (15x15)</option>
+                            <option value="high">High (20x20)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="generate3DSurface()" style="width: 100%; padding: 8px; background: #00d4aa; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                            Generate 3D Surface
+                        </button>
+                        <button onclick="addOptimizationTrail()" style="width: 100%; padding: 6px; background: #8b5cf6; color: #fff; border: none; border-radius: 4px; font-size: 12px; margin-top: 5px; cursor: pointer;">
+                            + Optimization Trail
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 3D Plot Container -->
+                <div id="threeDPlot" style="width: 100%; height: 600px; background: #1a1a1b; border-radius: 8px; border: 1px solid #2d2d30;">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; text-align: center;">
+                        <div>
+                            <div style="font-size: 24px; margin-bottom: 10px;">🎯</div>
+                            <div>Click "Generate 3D Surface" to visualize the parameter landscape</div>
+                            <div style="font-size: 12px; margin-top: 10px;">X: Z-Score Threshold, Y: Rebalance %, Z: BTC Growth %</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Panel -->
+                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div style="background: #252526; padding: 15px; border-radius: 8px; border: 1px solid #2d2d30;">
+                        <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">GLOBAL MAXIMUM</div>
+                        <div id="global-max" style="color: #00d4aa; font-weight: bold;">--</div>
+                        <div id="global-max-params" style="color: #666; font-size: 11px; margin-top: 3px;">--</div>
+                    </div>
+                    <div style="background: #252526; padding: 15px; border-radius: 8px; border: 1px solid #2d2d30;">
+                        <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">SURFACE POINTS</div>
+                        <div id="surface-points" style="color: #fbbf24; font-weight: bold;">--</div>
+                        <div style="color: #666; font-size: 11px; margin-top: 3px;">Calculated combinations</div>
+                    </div>
+                    <div style="background: #252526; padding: 15px; border-radius: 8px; border: 1px solid #2d2d30;">
+                        <div style="color: #b3b3b3; font-size: 12px; margin-bottom: 5px;">PERFORMANCE RANGE</div>
+                        <div id="performance-range" style="color: #8b5cf6; font-weight: bold;">--</div>
+                        <div style="color: #666; font-size: 11px; margin-top: 3px;">Min to Max BTC growth</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modular JavaScript -->
     <script src="/js/utils/simulation.js"></script>
     <script src="/js/api/backtest.js"></script>
     <script src="/js/api/historical.js"></script>
     <script src="/js/components/charts.js"></script>
+    <script src="/js/components/3d-visualization.js"></script>
+    <script src="/js/components/strategy-presets.js"></script>
+    <script src="/js/components/backtest-results.js"></script>
     <script src="/js/components/dashboard.js"></script>
     <script src="/js/app.js"></script>
 </body>
