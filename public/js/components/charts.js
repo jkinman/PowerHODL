@@ -243,27 +243,40 @@ class ChartManager {
         
         // Prepare data for charts (last 30 points to prevent overcrowding)
         const chartData = historicalData.slice(-30);
+        // Determine if we have multi-day data
+        const uniqueDays = new Set();
+        chartData.forEach(d => {
+            const date = new Date(d.date || d.timestamp);
+            uniqueDays.add(date.toDateString());
+        });
+        
+        const isMultiDay = uniqueDays.size > 1;
+        console.log(`📅 Chart data spans ${uniqueDays.size} unique days:`, Array.from(uniqueDays));
+        
         const labels = chartData.map(d => {
             const date = new Date(d.date || d.timestamp);
             
-            // If all data is from the same day, show time instead of date
-            const isIntraday = chartData.every(item => {
-                const itemDate = new Date(item.date || item.timestamp);
-                return itemDate.toDateString() === date.toDateString();
-            });
-            
-            if (isIntraday) {
-                // Show time for intraday data
+            if (isMultiDay) {
+                // Multi-day data: show dates
+                if (chartData.length > 90) {
+                    // For longer periods, show month and year
+                    return date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        year: '2-digit' 
+                    });
+                } else {
+                    // For shorter periods, show month and day
+                    return date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                }
+            } else {
+                // Single day data: show times
                 return date.toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
                     minute: '2-digit',
                     hour12: false 
-                });
-            } else {
-                // Show date for multi-day data
-                return date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
                 });
             }
         });
