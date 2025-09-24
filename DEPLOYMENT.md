@@ -1,4 +1,4 @@
-# 🚀 Vercel Deployment Guide
+# 🚀 Vercel + Neon Deployment Guide
 
 ## Quick Deploy to Vercel
 
