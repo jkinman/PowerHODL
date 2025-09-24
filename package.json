@@ -11,7 +11,9 @@
     "optimize": "node src/megaOptimizer.js",
     "backtest": "node src/cryptoOnlyBacktest.js",
     "strategy": "node -e \"import('./src/strategy.js').then(m => console.log('Strategy loaded:', m.default.name))\"",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "build": "echo 'No build step required - serverless functions'",
+    "vercel-build": "npm run build"
   },
   "keywords": [
     "crypto",
