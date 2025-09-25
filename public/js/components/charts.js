@@ -4,6 +4,18 @@
  * Manages all Chart.js instances and chart-related functionality
  */
 
+// Date/Time utilities for consistent date handling
+let DateTimeUtils = null;
+
+// Load DateTimeUtils when available (fallback for when module system isn't ready)
+try {
+    if (typeof window !== 'undefined' && window.DateTimeUtils) {
+        DateTimeUtils = window.DateTimeUtils;
+    }
+} catch (err) {
+    console.warn('⚠️ DateTimeUtils not available, using fallback methods');
+}
+
 class ChartManager {
     constructor() {
         this.balanceChart = null;
@@ -241,45 +253,59 @@ class ChartManager {
     updateHistoricalCharts(historicalData) {
         if (!historicalData || historicalData.length === 0) return;
         
-        // Prepare data for charts (last 30 points to prevent overcrowding)
-        const chartData = historicalData.slice(-30);
-        // Determine if we have multi-day data
-        const uniqueDays = new Set();
-        chartData.forEach(d => {
-            const date = new Date(d.date || d.timestamp);
-            uniqueDays.add(date.toDateString());
-        });
+        // Use DateTimeUtils if available, otherwise fallback to old logic
+        let labels, chartData, spanInfo;
         
-        const isMultiDay = uniqueDays.size > 1;
-        console.log(`📅 Chart data spans ${uniqueDays.size} unique days:`, Array.from(uniqueDays));
-        
-        const labels = chartData.map(d => {
-            const date = new Date(d.date || d.timestamp);
+        if (DateTimeUtils) {
+            // Modern approach using utility library
+            const validation = DateTimeUtils.validateDataset(historicalData);
+            if (!validation.valid) {
+                console.error('❌ Invalid historical data:', validation.errors);
+                return;
+            }
             
-            if (isMultiDay) {
-                // Multi-day data: show dates
-                if (chartData.length > 90) {
-                    // For longer periods, show month and year
-                    return date.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        year: '2-digit' 
-                    });
+            const spanDays = DateTimeUtils.calculateDatasetSpan(historicalData);
+            chartData = DateTimeUtils.sampleDataForChart(historicalData, 30);
+            labels = DateTimeUtils.formatChartLabels(chartData);
+            spanInfo = `Chart data spans ${spanDays + 1} days`;
+            
+            console.log(`📅 ${spanInfo} (using DateTimeUtils)`);
+            
+        } else {
+            // Fallback to original logic
+            const firstDate = new Date(historicalData[0].date || historicalData[0].timestamp);
+            const lastDate = new Date(historicalData[historicalData.length - 1].date || historicalData[historicalData.length - 1].timestamp);
+            const daySpan = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+            const isMultiDay = daySpan > 0;
+            
+            console.log(`📅 Chart data spans ${daySpan + 1} days (${firstDate.toDateString()} to ${lastDate.toDateString()}) - fallback mode`);
+            
+            chartData = historicalData.slice(-30);
+            
+            labels = chartData.map(d => {
+                const date = new Date(d.date || d.timestamp);
+                
+                if (isMultiDay) {
+                    if (chartData.length > 90) {
+                        return date.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            year: '2-digit' 
+                        });
+                    } else {
+                        return date.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                        });
+                    }
                 } else {
-                    // For shorter periods, show month and day
-                    return date.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
+                    return date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: false 
                     });
                 }
-            } else {
-                // Single day data: show times
-                return date.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: false 
-                });
-            }
-        });
+            });
+        }
         
         // Update ratio chart
         if (this.ratioChart) {
@@ -447,6 +473,36 @@ class ChartManager {
         if (this.zScoreChart) {
             this.zScoreChart.destroy();
             this.zScoreChart = null;
+        }
+    }
+
+    /**
+     * Show error state for historical charts
+     * @param {string} errorMessage - Error message to display
+     */
+    showHistoricalChartsError(errorMessage) {
+        console.log('📊 Showing error state for historical charts:', errorMessage);
+        
+        // Show error message in chart containers
+        const ratioContainer = document.getElementById('ratio-chart')?.parentElement;
+        const zscoreContainer = document.getElementById('zscore-chart')?.parentElement;
+        
+        if (ratioContainer) {
+            ratioContainer.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #ff6b6b;">
+                    <p><strong>Historical Data Unavailable</strong></p>
+                    <p style="font-size: 0.9em; opacity: 0.8;">${errorMessage}</p>
+                </div>
+            `;
+        }
+        
+        if (zscoreContainer) {
+            zscoreContainer.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #ff6b6b;">
+                    <p><strong>Historical Data Unavailable</strong></p>
+                    <p style="font-size: 0.9em; opacity: 0.8;">${errorMessage}</p>
+                </div>
+            `;
         }
     }
 }

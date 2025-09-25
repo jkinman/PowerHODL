@@ -52,10 +52,8 @@ class DashboardManager {
         });
 
         // Backtest sandbox button
-        const backtestBtn = document.getElementById('openBacktestSandbox');
-        if (backtestBtn) {
-            backtestBtn.onclick = () => this.openBacktestSandbox();
-        }
+        // Backtest sandbox is now integrated into main dashboard
+        // No modal opening logic needed
 
         // Modal close buttons
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -284,14 +282,10 @@ class DashboardManager {
             }
         } catch (error) {
             console.error('❌ Failed to load historical data:', error);
-            console.log('🎭 Using mock data - charts will be consistent on refresh');
             
-            // Fallback to mock data
-            if (window.SimulationUtils) {
-                const mockData = window.SimulationUtils.generateMockHistoricalData(30);
-                if (this.chartManager) {
-                    this.chartManager.updateHistoricalCharts(mockData);
-                }
+            // Show error state instead of mock data
+            if (this.chartManager) {
+                this.chartManager.showHistoricalChartsError('Historical data unavailable - database connection failed');
             }
         }
     }
@@ -311,17 +305,8 @@ class DashboardManager {
     }
 
     /**
-     * Open backtest sandbox modal
+     * Open backtest sandbox modal - REMOVED: Now integrated into main dashboard
      */
-    openBacktestSandbox() {
-        const modal = document.getElementById('backtestSandbox');
-        if (modal) {
-            modal.style.display = 'flex';
-            
-            // Clear previous results
-            this.clearBacktestResults();
-        }
-    }
 
     /**
      * Clear backtest results

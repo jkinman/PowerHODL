@@ -77,7 +77,7 @@ class PowerHODLApp {
         window.refreshHistoricalCharts = () => this.dashboardManager.refreshHistoricalCharts();
         
         // Make backtest functions globally available
-        window.openBacktestSandbox = () => this.dashboardManager.openBacktestSandbox();
+        // openBacktestSandbox removed - now integrated into main dashboard
         window.runSingleBacktest = () => this.runSingleBacktest();
         window.runOptimization = (iterations) => this.runOptimization(iterations);
         
@@ -226,15 +226,14 @@ class PowerHODLApp {
     }
 
     /**
-     * Show extended demo chart
+     * Show extended demo chart - DISABLED (no mock data allowed)
      */
     showExtendedDemo() {
-        console.log('📊 Showing extended mock portfolio demo');
+        console.log('⚠️ Extended demo disabled - no mock portfolio data will be shown');
+        console.log('💡 Use real backtest data instead');
         
-        if (window.SimulationUtils && this.chartManager) {
-            const mockData = window.SimulationUtils.generateExtendedMockPortfolio();
-            this.chartManager.updateBTCAccumulationChart(mockData);
-        }
+        // Display message to user instead of mock data
+        alert('Demo disabled: PowerHODL only shows real trading data. Use the backtest sandbox with real historical data instead.');
     }
 
     /**

@@ -25,13 +25,6 @@ async function fetchHistoricalData(days = 30) {
         return result.data;
     } catch (error) {
         console.error('❌ Failed to fetch historical data:', error);
-        
-        // Fallback to mock data
-        if (window.SimulationUtils) {
-            console.log('🎭 Using mock historical data as fallback');
-            return window.SimulationUtils.generateMockHistoricalData(days);
-        }
-        
         throw error;
     }
 }

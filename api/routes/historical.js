@@ -10,6 +10,28 @@ import MegaOptimalStrategy from '../../src/strategy.js';
 
 const router = express.Router();
 
+// Date handling utilities (inline for API compatibility)
+const normalizeDate = (dateInput) => {
+    if (!dateInput) return null;
+    try {
+        if (typeof dateInput === 'string') {
+            return dateInput;
+        } else if (dateInput instanceof Date) {
+            return dateInput.toISOString();
+        } else {
+            return new Date(dateInput).toISOString();
+        }
+    } catch (error) {
+        console.error('Failed to normalize date:', dateInput, error);
+        return null;
+    }
+};
+
+const extractDateOnly = (dateInput) => {
+    const normalized = normalizeDate(dateInput);
+    return normalized ? normalized.split('T')[0] : null;
+};
+
 /**
  * GET /api/historical
  * 
@@ -50,22 +72,15 @@ router.get('/', async (req, res, next) => {
                 message: dbError.message,
                 stack: dbError.stack?.substring(0, 200)
             });
-            console.log('📥 [HISTORICAL API] Database unavailable, generating mock data...');
             
-            historicalData = [];
-            const now = new Date();
-            for (let i = requestedDays - 1; i >= 0; i--) {
-                const date = new Date(now);
-                date.setDate(date.getDate() - i);
-                const baseEthPrice = 2600 + (Math.sin(i * 0.1) * 200);
-                const baseBtcPrice = 67000 + (Math.sin(i * 0.05) * 3000);
-                historicalData.push({
-                    collected_at: date.toISOString(),
-                    eth_price_usd: baseEthPrice,
-                    btc_price_usd: baseBtcPrice
-                });
-            }
-            console.log(`📊 [HISTORICAL API] Generated ${historicalData.length} days of mock data`);
+            // Return error instead of mock data
+            return res.status(503).json({
+                success: false,
+                error: 'Historical data unavailable',
+                message: 'Database connection failed - no historical data can be provided',
+                details: dbError.message,
+                timestamp: new Date().toISOString()
+            });
         }
         
         // Transform data for frontend charts
@@ -91,9 +106,13 @@ router.get('/', async (req, res, next) => {
                 }
             }
             
+            // Use date handling utilities for consistent formatting
+            const timestamp = normalizeDate(item.collected_at);
+            const dateOnly = extractDateOnly(item.collected_at);
+            
             return {
-                date: item.collected_at.split('T')[0], // Date only
-                timestamp: item.collected_at, // Full timestamp
+                date: dateOnly, // Date only
+                timestamp: timestamp, // Full timestamp
                 ethBtcRatio: ethBtcRatio,
                 zScore: zScore,
                 ethPrice: item.eth_price_usd,
@@ -107,7 +126,7 @@ router.get('/', async (req, res, next) => {
             metadata: {
                 requestedDays: requestedDays,
                 actualDays: processedData.length,
-                dataSource: historicalData.length > 50 ? 'database' : 'mock',
+                dataSource: 'database',
                 lookbackWindow: lookbackWindow,
                 processingTimeMs: Date.now() - startTime,
                 apiVersion: '2.0.0'

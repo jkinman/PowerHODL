@@ -33,23 +33,14 @@ router.get('/', async (req, res, next) => {
         
         // Get recent trades (last 10)
         let recentTrades = [];
+        let tradesError = null;
         try {
             recentTrades = await dbService.getRecentTrades(10);
         } catch (error) {
-            console.warn('⚠️ [PORTFOLIO API] Could not fetch trades from database:', error.message);
-            // Return mock trades if database unavailable
-            recentTrades = [
-                {
-                    id: 'mock_1',
-                    date: new Date().toISOString(),
-                    type: 'rebalance',
-                    action: 'BUY_ETH_SELL_BTC',
-                    ethAmount: 0.1,
-                    btcAmount: -0.003,
-                    reason: 'Z-score: -1.42 (ETH oversold)',
-                    status: 'executed'
-                }
-            ];
+            console.error('❌ [PORTFOLIO API] Could not fetch trades from database:', error.message);
+            tradesError = error.message;
+            // Return empty array - no mock data
+            recentTrades = [];
         }
         
         // Calculate portfolio metrics
@@ -78,7 +69,8 @@ router.get('/', async (req, res, next) => {
                 apiVersion: '2.0.0',
                 dataSource: 'database',
                 processingTimeMs: Date.now() - startTime
-            }
+            },
+            warnings: tradesError ? [`Unable to fetch trade history: ${tradesError}`] : []
         };
         
         console.log(`✅ [PORTFOLIO API] Portfolio data fetched in ${Date.now() - startTime}ms`);
