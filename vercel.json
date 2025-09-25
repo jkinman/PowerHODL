@@ -1,82 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm ci && npm run build",
   "devCommand": "npm run dev",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60
-    },
-    "api/cron/market-monitor.js": {
-      "maxDuration": 30
-    },
-    "api/cron/signal-generator.js": {
-      "maxDuration": 30
-    },
-    "api/cron/trade-executor.js": {
-      "maxDuration": 60
-    }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/market-monitor",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/signal-generator", 
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/trade-executor",
-      "schedule": "*/5 * * * *"
-    }
-  ],
+  "installCommand": "npm ci",
+  "framework": "sveltekit",
+  "rootDirectory": "powerhodl-svelte",
   "env": {
     "NODE_ENV": "production"
-  },
-  "rewrites": [
-    {
-      "source": "/api/(signal|backtest|portfolio|historical|health)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/dashboard/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/api/cron/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex"
-        }
-      ]
-    }
-  ]
+  }
 }

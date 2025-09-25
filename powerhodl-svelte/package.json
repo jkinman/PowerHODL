@@ -1,0 +1,51 @@
+{
+	"name": "powerhodl-svelte",
+	"version": "1.0.0",
+	"description": "PowerHODL Trading Dashboard - Svelte Edition",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"lint:fix": "prettier --write . && eslint --fix .",
+		"format": "prettier --write .",
+		"type-check": "svelte-check --threshold warning",
+		"test": "echo 'Tests will be added in later phase'",
+		"analyze": "vite build --mode analyze"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-vercel": "^5.4.6",
+		"@sveltejs/kit": "^2.7.7",
+		"@sveltejs/vite-plugin-svelte": "^4.0.1",
+		"@typescript-eslint/eslint-plugin": "^8.44.1",
+		"@typescript-eslint/parser": "^8.44.1",
+		"eslint": "^9.36.0",
+		"eslint-plugin-svelte": "^3.12.4",
+		"prettier": "^3.1.0",
+		"prettier-plugin-svelte": "^3.1.0",
+		"svelte": "^5.14.3",
+		"svelte-check": "^4.0.0",
+		"svelte-preprocess": "^6.0.3",
+		"terser": "^5.44.0",
+		"typescript": "^5.9.2",
+		"vite": "^5.0.0"
+	},
+	"dependencies": {
+		"chart.js": "^4.4.0",
+		"chartjs-adapter-date-fns": "^3.0.0",
+		"date-fns": "^2.30.0"
+	},
+	"keywords": [
+		"svelte",
+		"sveltekit",
+		"trading",
+		"bitcoin",
+		"ethereum",
+		"powerhodl"
+	],
+	"author": "PowerHODL Team",
+	"license": "MIT"
+}
