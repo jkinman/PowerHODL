@@ -4,11 +4,10 @@
  * Portfolio management and trade execution endpoint
  */
 
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import { DatabaseService } from '../../lib/services/DatabaseService.js';
 
-// Import existing services
-const { DatabaseService } = require('../../lib/services/DatabaseService.js');
+const router = express.Router();
 
 /**
  * GET /api/portfolio
@@ -114,4 +113,4 @@ router.post('/trade', async (req, res, next) => {
     }
 });
 
-module.exports = router;
+export default router;

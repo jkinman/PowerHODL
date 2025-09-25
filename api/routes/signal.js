@@ -4,17 +4,17 @@
  * Real-time trading signal generation endpoint
  */
 
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import MegaOptimalStrategy from '../../src/strategy.js';
+import { DatabaseService } from '../../lib/services/DatabaseService.js';
+import ETHBTCDataCollector from '../../src/dataCollector.js';
+import dotenv from 'dotenv';
 
-// Import existing services
-const MegaOptimalStrategy = require('../../src/strategy.js').default;
-const { DatabaseService } = require('../../lib/services/DatabaseService.js');
-const ETHBTCDataCollector = require('../../src/dataCollector.js').default;
+const router = express.Router();
 
 // Load environment variables
 if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
+    dotenv.config();
 }
 
 /**
@@ -110,4 +110,4 @@ router.get('/', async (req, res, next) => {
     }
 });
 
-module.exports = router;
+export default router;

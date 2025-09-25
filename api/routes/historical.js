@@ -4,12 +4,11 @@
  * Historical market data endpoint for dashboard charts
  */
 
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import { DatabaseService } from '../../lib/services/DatabaseService.js';
+import MegaOptimalStrategy from '../../src/strategy.js';
 
-// Import existing services
-const { DatabaseService } = require('../../lib/services/DatabaseService.js');
-const MegaOptimalStrategy = require('../../src/strategy.js').default;
+const router = express.Router();
 
 /**
  * GET /api/historical
@@ -125,4 +124,4 @@ router.get('/', async (req, res, next) => {
     }
 });
 
-module.exports = router;
+export default router;

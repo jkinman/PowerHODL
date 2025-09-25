@@ -5,20 +5,20 @@
  * Deployed on Vercel with serverless functions
  */
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
 
 // Import route handlers
-const signalRoutes = require('./routes/signal');
-const backtestRoutes = require('./routes/backtest');
-const portfolioRoutes = require('./routes/portfolio');
-const historicalRoutes = require('./routes/historical');
+import signalRoutes from './routes/signal.js';
+import backtestRoutes from './routes/backtest.js';
+import portfolioRoutes from './routes/portfolio.js';
+import historicalRoutes from './routes/historical.js';
 
 // Import middleware
-const errorHandler = require('./middleware/errorHandler');
-const requestLogger = require('./middleware/requestLogger');
+import errorHandler from './middleware/errorHandler.js';
+import requestLogger from './middleware/requestLogger.js';
 
 // Create Express app
 const app = express();
@@ -84,4 +84,4 @@ app.use('/api/*', (req, res) => {
 app.use(errorHandler);
 
 // Export for Vercel
-module.exports = app;
+export default app;

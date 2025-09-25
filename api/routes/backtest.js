@@ -4,14 +4,13 @@
  * Strategy backtesting endpoint with parameter optimization
  */
 
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import ETHBTCDataCollector from '../../src/dataCollector.js';
+import ETHBTCAnalyzer from '../../src/analyzer.js';
+import MegaOptimalStrategy from '../../src/strategy.js';
+import { DatabaseService } from '../../lib/services/DatabaseService.js';
 
-// Import existing services
-const ETHBTCDataCollector = require('../../src/dataCollector.js').default;
-const ETHBTCAnalyzer = require('../../src/analyzer.js').default;
-const MegaOptimalStrategy = require('../../src/strategy.js').default;
-const { DatabaseService } = require('../../lib/services/DatabaseService.js');
+const router = express.Router();
 
 /**
  * GET /api/backtest
@@ -260,4 +259,4 @@ async function runBacktest(params) {
     return response;
 }
 
-module.exports = router;
+export default router;
