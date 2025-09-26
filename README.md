@@ -24,7 +24,7 @@
 | Metric | PowerHODL | Buy & Hold | Difference |
 |--------|-----------|------------|------------|
 | **BTC Accumulation** | **+15.45%** | 0% | **+15.45% More BTC** |
-| **Win Rate** | **72%** | - | **Consistently Profitable** |
+| **Win Rate** | **72%** | 0% | **Consistently Profitable** |
 | **Max Drawdown** | **8.3%** | 35%+ | **Much Safer** |
 | **Trades** | 47 | 0 | **Optimized Entry/Exit** |
 | **Fees Impact** | 1.66% | 0% | **Already Factored In** |
