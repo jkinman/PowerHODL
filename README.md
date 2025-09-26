@@ -144,17 +144,34 @@ The backend automatically runs these scheduled tasks:
 
 ## The Science Behind PowerHODL
 
-### Mega-Optimal Parameters (1000s of Ongoing Iterations)
-- **Z-Score Threshold**: ±1.258 (sweet spot for signal accuracy)
-- **Rebalance Amount**: 49.79% (optimal risk/reward)
-- **Lookback Window**: 15 days (perfect for crypto volatility)
-- **Transaction Cost**: 1.66% (realistic, already factored in)
+### 🧠 Gradient Descent Optimization Tool
+PowerHODL includes an advanced **Gradient Descent Sandbox** that uses AI-powered optimization to find the perfect parameters for your trading strategy:
 
-### Why These Work
-- **Mean Reversion**: ETH/BTC ratio always returns to average
-- **Statistical Edge**: Only trade when confidence > 72%
-- **Risk Control**: Never trade more than 50% at once
-- **Market Tested**: Optimized on real historical data
+#### Interactive Parameter Discovery
+- **3D Visualization**: See how parameter changes affect BTC accumulation in real-time
+- **Smart Optimization**: AI explores thousands of parameter combinations automatically
+- **Visual Learning**: Watch the algorithm learn and improve through gradient descent
+- **Real Data Testing**: Validate strategies on actual historical market data
+
+#### Key Features
+- **Parameter Landscape**: 3D surface plots showing optimal parameter regions
+- **Gradient Descent Trail**: Visualize the AI's learning path to optimal settings
+- **Multiple Iterations**: Run hundreds of backtests with parameter variations
+- **Performance Comparison**: Compare different strategies side-by-side
+- **Data Period Selection**: Test on 30 days to 2+ years of historical data
+
+#### Current Optimized Parameters (AI-Discovered)
+- **Z-Score Threshold**: ±1.258 (AI-optimized for signal accuracy)
+- **Rebalance Amount**: 49.79% (gradient descent discovered optimal)
+- **Lookback Window**: 15 days (perfect for crypto volatility patterns)
+- **Transaction Cost**: 1.66% (realistic, AI-factored into optimization)
+
+#### Why Gradient Descent Works
+- **Continuous Learning**: Algorithm constantly improves parameter selection
+- **Multi-Dimensional Optimization**: Explores complex parameter interactions
+- **Statistical Validation**: Only recommends parameters with proven edge
+- **Risk-Aware**: Optimization includes drawdown and volatility constraints
+- **Market Adaptive**: Learns from changing market conditions
 
 ---
 
