@@ -278,7 +278,9 @@
 	
 	// Format numbers for display
 	function formatPercent(value) {
-		return value.toFixed(2) + '%';
+		const num = value || 0;
+		const sign = num >= 0 ? '+' : '';
+		return sign + num.toFixed(2) + '%';
 	}
 	
 	function formatBTC(value) {
@@ -639,8 +641,8 @@
 						<div class="results-grid">
 							<div class="result-metric">
 								<div class="metric-label">BTC Growth</div>
-								<div class="metric-value positive">
-									+{latest.btcGrowthPercent?.toFixed(2) || '0.00'}%
+								<div class="metric-value {(latest.btcGrowthPercent || 0) >= 0 ? 'positive' : 'negative'}">
+									{formatPercent(latest.btcGrowthPercent)}
 								</div>
 							</div>
 							<div class="result-metric">
@@ -793,7 +795,7 @@
 								<div class="best-header">
 									<h5>Best Configuration</h5>
 									<div class="best-score">
-										+{bestResult.btcGrowthPercent?.toFixed(2)}% BTC Growth
+										{formatPercent(bestResult.btcGrowthPercent)} BTC Growth
 									</div>
 								</div>
 								<div class="best-parameters">

@@ -222,16 +222,21 @@ export async function runSingleBacktest(parameters) {
 		const transformedResult = {
 			// Flatten the nested structure
 			btcGrowthPercent: results.result?.performance?.btcGrowthPercent || results.btcGrowthPercent || 0,
+			tokenAccumulationPercent: results.result?.performance?.tokenAccumulationPercent || 0,
 			totalTrades: results.result?.performance?.totalTrades || results.totalTrades || 0,
 			sharpeRatio: results.result?.performance?.sharpeRatio || results.sharpeRatio || 0,
 			maxDrawdown: Math.abs(results.result?.performance?.maxDrawdown || results.maxDrawdown || 0),
 			winRate: results.result?.performance?.winRate || results.winRate || 0,
+			totalFeesBTC: results.result?.performance?.totalFeesBTC || 0,
 			
 			// Portfolio data
 			portfolioHistory: results.result?.portfolioHistory || results.portfolioHistory || [],
 			finalPortfolio: results.result?.finalPortfolio || {
 				totalValueBTC: results.result?.portfolioHistory?.slice(-1)[0]?.totalValueBTC || 0
 			},
+			
+			// Trade signals
+			trades: results.result?.trades || [],
 			
 			// Metadata
 			parameters: results.parameters || parameters,

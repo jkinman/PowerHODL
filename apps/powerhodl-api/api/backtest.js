@@ -46,7 +46,12 @@ export default async function handler(req, res) {
 
             params = body.parameters;
             useRealData = body.useRealData !== false;
-            backtestPeriod = parseInt(body.backtestPeriod) || 30;
+            // Handle "ALL" or other non-numeric periods
+            if (body.backtestPeriod === 'ALL') {
+                backtestPeriod = 365 * 4; // 4 years of data
+            } else {
+                backtestPeriod = parseInt(body.backtestPeriod) || 30;
+            }
         }
 
         console.log('🚀 [SIMPLE BACKTEST] Starting:', { params, useRealData, backtestPeriod });
@@ -68,7 +73,8 @@ export default async function handler(req, res) {
             zScoreThreshold: params.zScoreThreshold || 1.5,
             rebalancePercent: params.rebalancePercent || params.rebalanceThreshold || 10,
             transactionCost: params.transactionCost || 0.1,
-            lookbackDays: params.lookbackWindow || 15
+            lookbackDays: params.lookbackWindow || 15,
+            maxAllocationShift: params.maxAllocationShift || 0.3 // Max 80/20 or 20/80 allocation
         };
 
         // Run the backtest
@@ -82,23 +88,37 @@ export default async function handler(req, res) {
                 parameters: params,
                 result: {
                     performance: {
-                        btcGrowthPercent: results.totalReturn,
-                        totalTrades: results.totalTrades,
-                        sharpeRatio: results.sharpeRatio,
-                        maxDrawdown: results.maxDrawdown,
-                        winRate: results.totalTrades > 0 ? (results.winningTrades / results.totalTrades * 100) : 0
+                        btcGrowthPercent: results.metrics.totalReturnPercent,
+                        tokenAccumulationPercent: results.metrics.tokenAccumulationPercent,
+                        totalTrades: results.metrics.totalTrades,
+                        sharpeRatio: results.metrics.sharpeRatio,
+                        maxDrawdown: results.metrics.maxDrawdown,
+                        totalFeesBTC: results.metrics.totalFeesBTC
                     },
+                    trades: results.trades.map(t => ({
+                        timestamp: t.timestamp,
+                        action: t.action,
+                        zScore: t.zScore,
+                        ratio: t.ratio,
+                        ethAmount: t.ethAmount,
+                        btcAmount: t.btcAmount,
+                        fees: t.fees,
+                        targetAllocation: t.targetAllocation,
+                        portfolioValueBefore: t.portfolioValueBefore,
+                        portfolioValueAfter: t.portfolioValueAfter
+                    })),
                     portfolioHistory: results.portfolioHistory.map(p => ({
                         timestamp: p.timestamp,
                         totalValueBTC: p.totalValueBTC,
                         btcAmount: p.btcAmount,
                         ethAmount: p.ethAmount,
-                        trades: p.traded ? 1 : 0
+                        ethPercentage: p.ethPercentage,
+                        zScore: p.zScore
                     })),
                     finalPortfolio: {
-                        totalValueBTC: results.finalValue,
-                        btcAmount: results.portfolioHistory[results.portfolioHistory.length - 1].btcAmount,
-                        ethAmount: results.portfolioHistory[results.portfolioHistory.length - 1].ethAmount
+                        totalValueBTC: results.portfolioHistory[results.portfolioHistory.length - 1].totalValueBTC,
+                        btcAmount: results.portfolio.btcAmount,
+                        ethAmount: results.portfolio.ethAmount
                     }
                 },
                 metadata: {

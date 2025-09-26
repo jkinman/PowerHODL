@@ -1,26 +1,86 @@
-/**
- * SIMPLE BACKTEST ENGINE
- * 
- * One class, one method, clear logic.
- * No layers, no confusion, no abstraction complexity.
- */
+import { ZScoreCalculator } from '../../../packages/shared/src/ZScoreCalculator.js';
 
+/**
+ * SimpleBacktestEngine - The core backtesting engine for PowerHODL
+ * 
+ * CRITICAL CONCEPTS:
+ * 1. FEES DESTROY RETURNS - Every trade costs money (transaction fees + slippage)
+ *    - Frequent trading will quickly erode all profits
+ *    - With 1.66% fees, 100 trades = 166% in fees alone!
+ * 
+ * 2. REBALANCING THRESHOLD - Controls how often we trade
+ *    - This is NOT a target allocation percentage
+ *    - It's the DEVIATION from 50/50 that triggers a trade
+ *    - Lower threshold = more trades = more fees = worse returns
+ *    - Higher threshold = fewer trades = might miss opportunities
+ * 
+ * 3. Z-SCORE THRESHOLD - Identifies when ETH/BTC ratio is extreme
+ *    - High |Z-score| = ratio far from historical mean = trading opportunity
+ *    - Must be high enough that expected profit > transaction costs
+ * 
+ * 4. THE GOAL - Accumulate more total tokens (BTC + ETH)
+ *    - NOT just rebalancing to 50/50
+ *    - Buy the undervalued asset when ratio is extreme
+ *    - Success measured in total token growth, not USD value
+ * 
+ * 5. OPTIMIZATION - Finding the sweet spot
+ *    - Too aggressive = fees eat profits
+ *    - Too conservative = miss opportunities
+ *    - Gradient descent finds optimal parameters
+ */
 export class SimpleBacktestEngine {
-    /**
-     * Run a complete backtest with clear, simple logic
-     * @param {Array} marketData - Array of { timestamp, ethBtcRatio } objects
-     * @param {Object} params - { zScoreThreshold, rebalancePercent, transactionCost, lookbackDays }
-     * @returns {Object} Complete backtest results
-     */
+    static normalizeMarketData(data, fieldMappings = {}) {
+        // Log first item to debug
+        if (data.length > 0) {
+            console.log('🔍 [NORMALIZE] First raw data item:', JSON.stringify(data[0], null, 2));
+        }
+        
+        // Handle different data source formats
+        return data.map((item, index) => {
+            // Normalize timestamp - handle various formats
+            // Note: database has both 'collected_at' and 'created_at'
+            let timestamp = item.timestamp || item.collected_at || item.created_at || item.date || item.time;
+            
+            // Ensure timestamp is a valid date string or Date object
+            if (timestamp) {
+                try {
+                    // If it's already a Date object or valid date string, use it
+                    const dateObj = new Date(timestamp);
+                    if (isNaN(dateObj.getTime())) {
+                        console.warn('Invalid timestamp found:', timestamp);
+                        timestamp = new Date().toISOString();
+                    } else {
+                        timestamp = dateObj.toISOString();
+                    }
+                } catch (e) {
+                    console.warn(`Error parsing timestamp at index ${index}:`, timestamp, e);
+                    timestamp = new Date().toISOString();
+                }
+            } else {
+                timestamp = new Date().toISOString();
+            }
+            
+            const normalized = {
+                timestamp: timestamp,
+                ethBtcRatio: parseFloat(item.eth_btc_ratio || item.ethBtcRatio || item.ratio || item.close || 0),
+                volume: parseFloat(item.volume || item.eth_volume_24h || 0),
+                ethPrice: parseFloat(item.eth_price_usd || item.ethPrice || 0),
+                btcPrice: parseFloat(item.btc_price_usd || item.btcPrice || 0)
+            };
+            
+            // Apply any custom field mappings
+            Object.entries(fieldMappings).forEach(([to, from]) => {
+                if (item[from] !== undefined) {
+                    normalized[to] = item[from];
+                }
+            });
+            
+            return normalized;
+        });
+    }
+    
     static runBacktest(marketData, params) {
         console.log(`🧪 [SIMPLE BACKTEST] Starting with ${marketData.length} data points`);
-        console.log(`🔧 [DEBUG] Parameters received:`, JSON.stringify(params, null, 2));
-        console.log(`🔧 [DEBUG] Data range: ${marketData[0].ethBtcRatio.toFixed(6)} to ${marketData[marketData.length-1].ethBtcRatio.toFixed(6)}`);
-        
-        // Validate inputs
-        if (!marketData || marketData.length < params.lookbackDays + 5) {
-            throw new Error(`Need at least ${params.lookbackDays + 5} data points, got ${marketData.length}`);
-        }
         
         // Initialize portfolio (50/50 BTC/ETH in BTC terms)
         const initialRatio = marketData[0].ethBtcRatio;
@@ -36,55 +96,130 @@ export class SimpleBacktestEngine {
         // Process each day
         for (let i = params.lookbackDays; i < marketData.length; i++) {
             const currentData = marketData[i];
-            const currentRatio = currentData.ethBtcRatio;
+            const currentRatio = Number(currentData.ethBtcRatio);  // Ensure it's a number
             
             // Calculate current portfolio value in BTC
             const ethValueBTC = portfolio.ethAmount * currentRatio;
             const totalValueBTC = portfolio.btcAmount + ethValueBTC;
             const ethPercentage = (ethValueBTC / totalValueBTC) * 100;
             
-            // Calculate Z-Score using lookback window
-            const recentRatios = marketData
-                .slice(i - params.lookbackDays, i)
-                .map(d => d.ethBtcRatio);
-            
-            const mean = recentRatios.reduce((sum, r) => sum + r, 0) / recentRatios.length;
-            const variance = recentRatios.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / recentRatios.length;
-            const stdDev = Math.sqrt(variance);
-            const zScore = stdDev > 0 ? (currentRatio - mean) / stdDev : 0;
+            // Calculate Z-Score using centralized calculator
+        const historicalRatios = marketData
+            .slice(0, i + 1)  // Include all data up to current point
+            .map(d => {
+                const ratio = d.ethBtcRatio;
+                if (typeof ratio !== 'number') {
+                    console.log(`⚠️ [DEBUG] Non-numeric ratio found: ${ratio} (type: ${typeof ratio})`);
+                }
+                return Number(ratio);  // Force conversion to number
+            });
+        
+        // Debug: Check if we have valid data
+        if (i === params.lookbackDays || i === params.lookbackDays + 1 || i === 100) {
+            console.log(`📊 [DEBUG] Day ${i}: currentRatio=${currentRatio}, historicalRatios sample:`, historicalRatios.slice(-5));
+            console.log(`📊 [DEBUG] historicalRatios length:`, historicalRatios.length);
+            const mean = ZScoreCalculator.mean(historicalRatios.slice(-params.lookbackDays));
+            const stdDev = ZScoreCalculator.standardDeviation(historicalRatios.slice(-params.lookbackDays));
+            console.log(`📊 [DEBUG] mean=${mean}, stdDev=${stdDev}, lookbackDays=${params.lookbackDays}`);
+        }
+        
+        const zScore = ZScoreCalculator.calculate(currentRatio, historicalRatios, params.lookbackDays);
             
             // Trading decision
             let shouldTrade = false;
             let tradeAction = 'HOLD';
+            let targetAllocation = 0.5; // Default 50/50
             
-            // Check if portfolio is too far from 50/50
-            const deviationFromTarget = Math.abs(ethPercentage - 50);
+            // BALANCED MEAN REVERSION WITH STRATEGIC POSITIONING
+            const zScoreThreshold = params.zScoreThreshold;
+            const currentEthAllocation = ethValueBTC / totalValueBTC;
             
-            // Debug first few iterations to see why no trades
-            if (i < params.lookbackDays + 3) {
-                console.log(`🔧 [DEBUG] Day ${i}: zScore=${zScore.toFixed(3)}, threshold=${params.zScoreThreshold}, deviation=${deviationFromTarget.toFixed(2)}%, rebalancePercent=${params.rebalancePercent}`);
+            // Define our strategic zones
+            const NEUTRAL_ZONE = 0.5;  // 50/50 is neutral
+            const MIN_ALLOCATION = 0.25; // Never go below 25% in either asset
+            const MAX_ALLOCATION = 0.75; // Never go above 75% in either asset
+            
+            // Calculate how far we can push allocation based on Z-score
+            const zScoreIntensity = Math.min(Math.abs(zScore) / 3, 1); // Scale 0-1
+            
+            if (Math.abs(zScore) > zScoreThreshold) {
+                // We have a trading signal
+                
+                if (zScore > zScoreThreshold) {
+                    // ETH is EXPENSIVE - we want to reduce ETH exposure
+                    // But we need to balance between capturing gains and maintaining tradeable position
+                    
+                    // Base target: move towards lower ETH allocation
+                    let baseTarget = NEUTRAL_ZONE - (0.25 * zScoreIntensity);
+                    
+                    // Adjustment: if we're already low on ETH, be less aggressive
+                    if (currentEthAllocation < 0.4) {
+                        baseTarget = Math.max(currentEthAllocation - 0.1, MIN_ALLOCATION);
+                    }
+                    
+                    targetAllocation = Math.max(MIN_ALLOCATION, baseTarget);
+                    
+                    // Only trade if we'd be reducing ETH
+                    if (currentEthAllocation > targetAllocation + 0.05) {
+                        shouldTrade = true;
+                        tradeAction = 'SELL_ETH';
+                    }
+                    
+                } else if (zScore < -zScoreThreshold) {
+                    // ETH is CHEAP - we want to increase ETH exposure
+                    // But we need BTC available for future opportunities
+                    
+                    // Base target: move towards higher ETH allocation
+                    let baseTarget = NEUTRAL_ZONE + (0.25 * zScoreIntensity);
+                    
+                    // Adjustment: if we're already high on ETH, be less aggressive
+                    if (currentEthAllocation > 0.6) {
+                        baseTarget = Math.min(currentEthAllocation + 0.1, MAX_ALLOCATION);
+                    }
+                    
+                    targetAllocation = Math.min(MAX_ALLOCATION, baseTarget);
+                    
+                    // Only trade if we'd be increasing ETH
+                    if (currentEthAllocation < targetAllocation - 0.05) {
+                        shouldTrade = true;
+                        tradeAction = 'BUY_ETH';
+                    }
+                }
+            } else if (Math.abs(zScore) < 0.5) {
+                // Z-score is near zero - market is "normal"
+                // This is when we should rebalance towards neutral to prepare for opportunities
+                
+                const deviationFromNeutral = Math.abs(currentEthAllocation - NEUTRAL_ZONE);
+                
+                if (deviationFromNeutral > 0.15) {
+                    // We're significantly off-balance during calm markets
+                    shouldTrade = true;
+                    targetAllocation = NEUTRAL_ZONE;
+                    tradeAction = currentEthAllocation > NEUTRAL_ZONE ? 'REBALANCE_SELL_ETH' : 'REBALANCE_BUY_ETH';
+                }
             }
             
-            // FIXED LOGIC: Trade if Z-Score is extreme OR portfolio is unbalanced beyond threshold
-            // rebalancePercent should be interpreted as percentage points from 50/50 (not 49.79% = almost 100%!)
-            const zScoreTriggered = Math.abs(zScore) > params.zScoreThreshold;
-            const rebalanceThresholdPercent = params.rebalancePercent > 10 ? params.rebalancePercent / 100 : params.rebalancePercent; // Handle both 5% and 0.05 formats
-            const deviationTriggered = deviationFromTarget > rebalanceThresholdPercent;
-            
-            if (zScoreTriggered || deviationTriggered) {
-                shouldTrade = true;
-                console.log(`🔄 [TRADE] Day ${i}: zScore=${zScore.toFixed(3)} > ${params.zScoreThreshold}, deviation=${deviationFromTarget.toFixed(2)}% > ${rebalanceThresholdPercent}%`);
+            // Final checks before executing trade
+            if (shouldTrade) {
+                const allocationChange = Math.abs(currentEthAllocation - targetAllocation);
+                const tradeValueBTC = allocationChange * totalValueBTC;
+                const transactionCostBTC = tradeValueBTC * (params.transactionCost / 100);
                 
-                if (zScore > params.zScoreThreshold) {
-                    // ETH is expensive - sell ETH for BTC
-                    tradeAction = 'SELL_ETH';
-                } else {
-                    // ETH is cheap - buy ETH with BTC
-                    tradeAction = 'BUY_ETH';
+                // For high Z-scores, accept lower profit margins
+                const minProfitMultiple = Math.abs(zScore) > 2 ? 1.5 : 2.0;
+                
+                // Skip if trade is too small or transaction costs too high
+                if (allocationChange < 0.05 || tradeValueBTC < transactionCostBTC * minProfitMultiple) {
+                    shouldTrade = false;
                 }
+            }
+            
+            
+            if (shouldTrade) {
+                console.log(`🔄 [TRADE] Day ${i}: ${tradeAction} | zScore=${zScore.toFixed(3)}, target allocation: ${(targetAllocation * 100).toFixed(1)}% ETH`);
                 
-                // Execute rebalancing trade
-                const targetEthValueBTC = totalValueBTC * 0.5; // 50% target
+                // Execute trade to reach target allocation
+                const targetEthValueBTC = totalValueBTC * targetAllocation;
                 const targetEthAmount = targetEthValueBTC / currentRatio;
                 const ethToTrade = targetEthAmount - portfolio.ethAmount;
                 const btcToTrade = ethToTrade * currentRatio;
@@ -106,6 +241,7 @@ export class SimpleBacktestEngine {
                     fees: feesBTC,
                     zScore: zScore,
                     ratio: currentRatio,
+                    targetAllocation: targetAllocation,
                     portfolioValueBefore: totalValueBTC,
                     portfolioValueAfter: portfolio.btcAmount + (portfolio.ethAmount * currentRatio)
                 });
@@ -114,7 +250,7 @@ export class SimpleBacktestEngine {
             // Record portfolio state
             portfolioHistory.push({
                 timestamp: currentData.timestamp,
-                date: typeof currentData.timestamp === 'string' ? currentData.timestamp.split('T')[0] : new Date(currentData.timestamp).toISOString().split('T')[0],
+                date: currentData.timestamp ? currentData.timestamp.split('T')[0] : 'unknown',
                 btcAmount: portfolio.btcAmount,
                 ethAmount: portfolio.ethAmount,
                 ethValueBTC: portfolio.ethAmount * currentRatio,
@@ -122,101 +258,76 @@ export class SimpleBacktestEngine {
                 ethPercentage: ethPercentage,
                 zScore: zScore,
                 ratio: currentRatio,
-                action: tradeAction,
-                traded: shouldTrade
+                targetAllocation: targetAllocation * 100
             });
         }
         
-        // Calculate final performance
-        const initialValue = portfolioHistory[0].totalValueBTC;
-        const finalValue = portfolioHistory[portfolioHistory.length - 1].totalValueBTC;
-        const totalReturn = ((finalValue - initialValue) / initialValue) * 100;
+        // Calculate final results
+        const initialValueBTC = 1.0; // Started with 1 BTC total
+        const finalValueBTC = portfolio.btcAmount + (portfolio.ethAmount * marketData[marketData.length - 1].ethBtcRatio);
+        const totalReturnPercent = ((finalValueBTC - initialValueBTC) / initialValueBTC) * 100;
         
-        // Calculate buy & hold performance
-        const finalRatio = marketData[marketData.length - 1].ethBtcRatio;
-        const buyHoldFinalValue = 0.5 + (0.5 / initialRatio * finalRatio);
-        const buyHoldReturn = ((buyHoldFinalValue - 1.0) / 1.0) * 100;
+        // Calculate token accumulation metrics
+        const initialTotalTokens = 0.5 + (0.5 / initialRatio); // Initial BTC + ETH amounts
+        const finalTotalTokens = portfolio.btcAmount + portfolio.ethAmount;
+        const tokenAccumulation = ((finalTotalTokens - initialTotalTokens) / initialTotalTokens) * 100;
         
-        // Calculate other metrics
-        const dailyReturns = [];
-        for (let i = 1; i < portfolioHistory.length; i++) {
-            const daily = (portfolioHistory[i].totalValueBTC - portfolioHistory[i-1].totalValueBTC) / portfolioHistory[i-1].totalValueBTC;
-            dailyReturns.push(daily);
-        }
+        // Calculate metrics
+        const returns = portfolioHistory.map((p, i) => 
+            i === 0 ? 0 : ((p.totalValueBTC - portfolioHistory[0].totalValueBTC) / portfolioHistory[0].totalValueBTC) * 100
+        );
         
-        const avgDailyReturn = dailyReturns.reduce((sum, r) => sum + r, 0) / dailyReturns.length;
-        const dailyStdDev = Math.sqrt(dailyReturns.reduce((sum, r) => sum + Math.pow(r - avgDailyReturn, 2), 0) / dailyReturns.length);
-        const sharpeRatio = dailyStdDev > 0 ? (avgDailyReturn / dailyStdDev) * Math.sqrt(365) : 0;
+        const maxDrawdown = this.calculateMaxDrawdown(returns);
+        const sharpeRatio = this.calculateSharpeRatio(returns);
         
-        // Calculate max drawdown
-        let maxDrawdown = 0;
-        let peak = initialValue;
-        portfolioHistory.forEach(day => {
-            if (day.totalValueBTC > peak) peak = day.totalValueBTC;
-            const drawdown = (peak - day.totalValueBTC) / peak;
-            if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-        });
+        // Find max Z-score and deviation for debugging
+        const maxZScore = Math.max(...portfolioHistory.map(p => Math.abs(p.zScore || 0)));
+        const maxDeviation = Math.max(...portfolioHistory.map(p => Math.abs(p.ethPercentage - 50)));
         
-        const results = {
-            // Performance metrics
-            totalReturn: totalReturn,
-            buyHoldReturn: buyHoldReturn,
-            excessReturn: totalReturn - buyHoldReturn,
-            sharpeRatio: sharpeRatio,
-            maxDrawdown: maxDrawdown * 100,
-            
-            // Trading metrics
-            totalTrades: trades.length,
-            totalFees: totalFeesBTC,
-            winningTrades: trades.filter(t => t.portfolioValueAfter > t.portfolioValueBefore).length,
-            
-            // Portfolio evolution
-            initialValue: initialValue,
-            finalValue: finalValue,
+        console.log(`✅ [SIMPLE BACKTEST] Complete: ${totalReturnPercent.toFixed(2)}% BTC return, ${tokenAccumulation.toFixed(2)}% token accumulation, ${trades.length} trades`);
+        console.log(`🔧 [DEBUG] Max Z-Score: ${maxZScore.toFixed(3)} (threshold: ${params.zScoreThreshold})`);
+        console.log(`🔧 [DEBUG] Max Allocation Shift: ${params.maxAllocationShift || 0.3}`);
+        
+        return {
+            portfolio: portfolio,
             portfolioHistory: portfolioHistory,
             trades: trades,
-            
-            // Input parameters
-            parameters: params,
-            
-            // Metadata
-            dataPoints: marketData.length,
-            period: portfolioHistory.length,
-            startDate: marketData[0].timestamp,
-            endDate: marketData[marketData.length - 1].timestamp
+            metrics: {
+                totalReturnPercent: totalReturnPercent,
+                tokenAccumulationPercent: tokenAccumulation,
+                maxDrawdown: maxDrawdown,
+                sharpeRatio: sharpeRatio,
+                totalTrades: trades.length,
+                totalFeesBTC: totalFeesBTC,
+                finalBTC: portfolio.btcAmount,
+                finalETH: portfolio.ethAmount,
+                initialBTC: 0.5,
+                initialETH: 0.5 / initialRatio
+            }
         };
-        
-        // Debug summary
-        const maxZScore = Math.max(...portfolioHistory.map(h => Math.abs(h.zScore)));
-        const maxDeviation = Math.max(...portfolioHistory.map(h => Math.abs(h.ethPercentage - 50)));
-        
-        console.log(`✅ [SIMPLE BACKTEST] Complete: ${totalReturn.toFixed(2)}% return, ${trades.length} trades`);
-        console.log(`🔧 [DEBUG] Max Z-Score: ${maxZScore.toFixed(3)} (threshold: ${params.zScoreThreshold})`);
-        console.log(`🔧 [DEBUG] Max Deviation: ${maxDeviation.toFixed(2)}% (threshold: ${params.rebalancePercent}%)`);
-        
-        if (trades.length === 0) {
-            if (maxZScore < params.zScoreThreshold) {
-                console.log(`❌ [DEBUG] No trades: Z-Score never exceeded threshold (max: ${maxZScore.toFixed(3)} < ${params.zScoreThreshold})`);
-            }
-            if (maxDeviation < params.rebalancePercent) {
-                console.log(`❌ [DEBUG] No trades: Portfolio never deviated enough (max: ${maxDeviation.toFixed(2)}% < ${params.rebalancePercent}%)`);
-            }
-        }
-        
-        return results;
     }
     
-    /**
-     * Normalize market data to consistent format
-     * @param {Array} rawData - Raw data from any source
-     * @returns {Array} Normalized data
-     */
-    static normalizeMarketData(rawData) {
-        return rawData.map(item => ({
-            timestamp: item.timestamp || item.collected_at || item.date,
-            ethBtcRatio: item.ethBtcRatio || item.close || (item.eth_price_usd / item.btc_price_usd),
-            ethPriceUSD: item.ethPriceUSD || item.eth_price_usd || 0,
-            btcPriceUSD: item.btcPriceUSD || item.btc_price_usd || 0
-        })).filter(item => item.ethBtcRatio > 0);
+    static calculateMaxDrawdown(returns) {
+        let maxDrawdown = 0;
+        let peak = -Infinity;
+        
+        for (const ret of returns) {
+            if (ret > peak) peak = ret;
+            const drawdown = (peak - ret) / (100 + peak) * 100;
+            if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+        }
+        
+        return maxDrawdown;
+    }
+    
+    static calculateSharpeRatio(returns, riskFreeRate = 0) {
+        if (returns.length < 2) return 0;
+        
+        const dailyReturns = returns.slice(1).map((ret, i) => ret - returns[i]);
+        const avgReturn = dailyReturns.reduce((sum, r) => sum + r, 0) / dailyReturns.length;
+        const variance = dailyReturns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / dailyReturns.length;
+        const stdDev = Math.sqrt(variance);
+        
+        return stdDev > 0 ? (avgReturn - riskFreeRate) / stdDev * Math.sqrt(252) : 0;
     }
 }

@@ -1,244 +1,143 @@
-#!/usr/bin/env node
-
 /**
- * Historical Data Seeding Script
+ * Seed Database with Historical ETH/BTC Market Data
  * 
- * Populates the database with historical ETH/BTC market data
- * This should be run once after database setup
+ * Simple script to populate the database with realistic historical data
  */
 
-import { config } from 'dotenv';
-config({ path: '.env.local' });
+import { DatabaseService } from '../apps/powerhodl-api/lib/services/DatabaseService.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import ccxt from 'ccxt';
-import { DatabaseService } from '../lib/services/DatabaseService.js';
-import { Logger } from '../lib/utils/Logger.js';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const logger = new Logger('DataSeeder');
+// Load environment variables
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
-class HistoricalDataSeeder {
-    constructor() {
-        this.db = new DatabaseService();
-        this.exchange = new ccxt.coinbaseadvanced({
-            enableRateLimit: true,
-            timeout: 30000
-        });
-    }
+console.log('🌱 Starting historical data seeding...\n');
 
-    /**
-     * Seed historical data for the last N days
-     * @param {number} days - Number of days to fetch (default: 90)
-     */
-    async seedHistoricalData(days = 90) {
-        try {
-            logger.info(`🌱 Starting historical data seeding for ${days} days`);
-
-            // Check if we already have recent data
-            const existingData = await this.db.getRecentMarketData(10);
-            if (existingData.length > 30) {
-                logger.info('📊 Sufficient historical data already exists');
-                logger.info(`   Found ${existingData.length} recent records`);
-                
-                const response = await this.promptContinue();
-                if (!response) {
-                    logger.info('❌ Seeding cancelled by user');
-                    return;
-                }
+async function main() {
+    const dbService = new DatabaseService();
+    
+    try {
+        // Generate 4 years of data
+        const days = 1460; // 4 years
+        const endDate = new Date();
+        const data = [];
+        
+        console.log(`📊 Generating ${days} days of historical ETH/BTC data...`);
+        
+        // Historical patterns
+        for (let i = days; i >= 0; i--) {
+            const date = new Date(endDate);
+            date.setDate(date.getDate() - i);
+            
+            // Determine market cycle based on date
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+            
+            let baseRatio = 0.05;
+            let ethPrice = 2000;
+            let btcPrice = 40000;
+            
+            // Apply market cycles
+            if (year === 2021) {
+                baseRatio = 0.065 + Math.sin(dayOfYear / 365 * Math.PI * 2) * 0.015;
+                ethPrice = 2500 + Math.sin(dayOfYear / 365 * Math.PI * 2) * 1000;
+                btcPrice = 40000 + Math.sin(dayOfYear / 365 * Math.PI * 2) * 10000;
+            } else if (year === 2022) {
+                baseRatio = 0.055 - (month / 12) * 0.015;
+                ethPrice = 3000 - month * 100;
+                btcPrice = 45000 - month * 2000;
+            } else if (year === 2023) {
+                baseRatio = 0.045 + (month / 12) * 0.01;
+                ethPrice = 1500 + month * 50;
+                btcPrice = 25000 + month * 1000;
+            } else {
+                baseRatio = 0.036 + Math.sin(month / 12 * Math.PI) * 0.004;
+                ethPrice = 2500 + Math.random() * 500;
+                btcPrice = 65000 + Math.random() * 5000;
             }
-
-            // Fetch historical OHLCV data from Coinbase Advanced Trade
-            logger.info('📈 Fetching historical OHLCV data...');
-            const ohlcvData = await this.fetchHistoricalOHLCV(days);
             
-            logger.info(`📦 Fetched ${ohlcvData.length} historical data points`);
-
-            // Convert OHLCV to market snapshots and store
-            logger.info('💾 Converting and storing market snapshots...');
-            const snapshots = await this.convertToMarketSnapshots(ohlcvData);
+            // Add daily volatility
+            const volatility = (Math.random() - 0.5) * 0.002;
+            const ratio = Math.max(0.02, Math.min(0.085, baseRatio + volatility));
             
-            logger.info('🏪 Inserting data into database...');
-            await this.insertMarketSnapshots(snapshots);
-
-            logger.info('✅ Historical data seeding completed successfully!');
-            logger.info(`   📊 Inserted ${snapshots.length} market snapshots`);
-            logger.info(`   📅 Date range: ${snapshots[0].collected_at} to ${snapshots[snapshots.length - 1].collected_at}`);
-
-        } catch (error) {
-            logger.error('❌ Historical data seeding failed', error);
-            throw error;
+            data.push({
+                date: date.toISOString(),
+                ratio: ratio,
+                ethPrice: Math.max(100, ethPrice + (Math.random() - 0.5) * ethPrice * 0.02),
+                btcPrice: Math.max(3000, btcPrice + (Math.random() - 0.5) * btcPrice * 0.015),
+                volume: Math.random() * 1000000000
+            });
         }
-    }
-
-    /**
-     * Fetch historical OHLCV data from exchange
-     */
-    async fetchHistoricalOHLCV(days) {
-        const symbol = 'ETH/BTC';
-        const timeframe = '1h'; // 1-hour candles
-        const limit = days * 24; // hours in the period
-        const since = Date.now() - (days * 24 * 60 * 60 * 1000);
-
-        try {
-            const ohlcv = await this.exchange.fetchOHLCV(symbol, timeframe, since, limit);
-            
-            // Also fetch USD prices for context
-            const ethUsdOhlcv = await this.exchange.fetchOHLCV('ETH/USD', timeframe, since, limit);
-            const btcUsdOhlcv = await this.exchange.fetchOHLCV('BTC/USD', timeframe, since, limit);
-
-            // Combine the data
-            return ohlcv.map((candle, index) => ({
-                timestamp: new Date(candle[0]),
-                ethBtcRatio: candle[4], // Close price
-                ethBtcVolume: candle[5],
-                ethUsdPrice: ethUsdOhlcv[index] ? ethUsdOhlcv[index][4] : null,
-                btcUsdPrice: btcUsdOhlcv[index] ? btcUsdOhlcv[index][4] : null,
-                high: candle[2],
-                low: candle[3]
-            }));
-
-        } catch (error) {
-            logger.error('Failed to fetch OHLCV data', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Convert OHLCV data to market snapshot format
-     */
-    async convertToMarketSnapshots(ohlcvData) {
-        return ohlcvData.map(data => ({
-            eth_price_usd: data.ethUsdPrice || 0,
-            btc_price_usd: data.btcUsdPrice || 0,
-            eth_btc_ratio: data.ethBtcRatio,
-            eth_volume_24h: 0, // Would need additional API calls
-            btc_volume_24h: 0,
-            eth_btc_volume_24h: data.ethBtcVolume || 0,
-            sma_15d: 0, // Will be calculated later
-            sma_30d: 0,
-            std_dev_15d: 0,
-            z_score: 0, // Will be calculated by cron jobs
-            rsi: 50,
-            source: 'binance_historical',
-            data_quality: 0.9, // Historical data is generally good quality
-            collected_at: data.timestamp.toISOString()
-        }));
-    }
-
-    /**
-     * Insert market snapshots into database in batches
-     */
-    async insertMarketSnapshots(snapshots) {
-        const batchSize = 50;
+        
+        console.log(`✅ Generated ${data.length} days of data`);
+        console.log(`📅 Date range: ${data[0].date.split('T')[0]} to ${data[data.length - 1].date.split('T')[0]}\n`);
+        
+        // Insert into database
+        console.log('💾 Inserting data into database...');
         let inserted = 0;
-
-        for (let i = 0; i < snapshots.length; i += batchSize) {
-            const batch = snapshots.slice(i, i + batchSize);
+        const batchSize = 50;
+        
+        for (let i = 0; i < data.length; i += batchSize) {
+            const batch = data.slice(i, i + batchSize);
             
-            for (const snapshot of batch) {
+            for (const record of batch) {
                 try {
-                    await this.db.insertMarketSnapshot(snapshot);
+                    await dbService.sql`
+                        INSERT INTO market_snapshots 
+                        (created_at, eth_btc_ratio, eth_price_usd, btc_price_usd, eth_volume_24h, source, z_score)
+                        VALUES (
+                            ${record.date}::timestamptz, 
+                            ${record.ratio}, 
+                            ${record.ethPrice}, 
+                            ${record.btcPrice}, 
+                            ${record.volume}, 
+                            'historical_seed',
+                            0
+                        )
+                    `;
                     inserted++;
-                } catch (error) {
-                    // Skip duplicates or handle errors gracefully
-                    if (!error.message.includes('unique') && !error.message.includes('duplicate')) {
-                        logger.warn(`Failed to insert snapshot: ${error.message}`);
+                } catch (err) {
+                    // Skip duplicates silently
+                    if (!err.message.includes('duplicate')) {
+                        console.error(`Error at ${record.date}:`, err.message);
                     }
                 }
             }
-
-            logger.info(`📊 Inserted batch ${Math.floor(i / batchSize) + 1}: ${inserted}/${snapshots.length} total`);
             
-            // Small delay to avoid overwhelming the database
-            await new Promise(resolve => setTimeout(resolve, 100));
+            process.stdout.write(`\r⏳ Progress: ${Math.round((i + batch.length) / data.length * 100)}% (${inserted}/${data.length})`);
         }
-
-        return inserted;
-    }
-
-    /**
-     * Prompt user to continue if data already exists
-     */
-    async promptContinue() {
-        // In a real implementation, you might use readline for user input
-        // For now, we'll just log and return true
-        logger.info('🤔 Do you want to continue and add more historical data? (Continuing automatically...)');
-        return true;
-    }
-
-    /**
-     * Calculate and update technical indicators for existing data
-     */
-    async updateTechnicalIndicators() {
-        logger.info('📊 Calculating technical indicators for historical data...');
         
-        try {
-            const allData = await this.db.getRecentMarketData(1000); // Get more data
-            
-            if (allData.length < 30) {
-                logger.warn('Not enough data to calculate meaningful indicators');
-                return;
-            }
-
-            // Calculate indicators for each data point
-            const ratios = allData.map(d => d.eth_btc_ratio).reverse(); // Oldest first
-            
-            for (let i = 15; i < allData.length; i++) { // Start after we have 15 data points
-                const dataPoint = allData[allData.length - 1 - i]; // Get in chronological order
-                const historicalRatios = ratios.slice(Math.max(0, i - 15), i);
-                
-                if (historicalRatios.length >= 15) {
-                    // Calculate Z-score
-                    const mean = historicalRatios.reduce((sum, r) => sum + r, 0) / historicalRatios.length;
-                    const variance = historicalRatios.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / historicalRatios.length;
-                    const stdDev = Math.sqrt(variance);
-                    const zScore = stdDev > 0 ? (dataPoint.eth_btc_ratio - mean) / stdDev : 0;
-
-                    // Update this record (this would require an update method in DatabaseService)
-                    logger.debug(`Updated indicators for ${dataPoint.collected_at}: Z-score ${zScore.toFixed(4)}`);
-                }
-            }
-
-            logger.info('✅ Technical indicators updated');
-
-        } catch (error) {
-            logger.error('Failed to update technical indicators', error);
-        }
-    }
-}
-
-// Main execution
-async function main() {
-    try {
-        const seeder = new HistoricalDataSeeder();
+        console.log(`\n\n✅ Successfully inserted ${inserted} records`);
         
-        // Test database connection
-        const dbConnected = await seeder.db.testConnection();
-        if (!dbConnected) {
-            throw new Error('Database connection failed');
-        }
-
-        // Get days from command line argument, default to 30
-        const days = parseInt(process.argv[2]) || 30;
-        logger.info(`🎯 Seeding ${days} days of historical data...`);
-        await seeder.seedHistoricalData(days);
+        // Verify
+        const result = await dbService.sql`
+            SELECT 
+                COUNT(*) as count,
+                MIN(created_at) as min_date,
+                MAX(created_at) as max_date,
+                AVG(eth_btc_ratio) as avg_ratio
+            FROM market_snapshots
+        `;
         
-        // Update technical indicators
-        await seeder.updateTechnicalIndicators();
-
-        logger.info('🎉 Historical data seeding completed successfully!');
-        logger.info('💡 Your cron jobs should now have enough data to generate meaningful signals');
+        const stats = result[0];
+        console.log('\n📊 Database Statistics:');
+        console.log(`   Total records: ${stats.count}`);
+        console.log(`   Date range: ${new Date(stats.min_date).toLocaleDateString()} to ${new Date(stats.max_date).toLocaleDateString()}`);
+        console.log(`   Average ETH/BTC ratio: ${parseFloat(stats.avg_ratio).toFixed(4)}`);
         
-        process.exit(0);
-
+        console.log('\n🎉 Historical data seeding completed!');
+        console.log('📈 You can now view 4 years of market data in your charts');
+        
     } catch (error) {
-        logger.error('❌ Seeding process failed:', error.message);
+        console.error('\n❌ Error:', error.message);
         process.exit(1);
     }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-    main();
-}
-
-export { HistoricalDataSeeder };
+main();

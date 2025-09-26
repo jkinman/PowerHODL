@@ -18,6 +18,7 @@
 	} from '$lib/stores';
 	import { BaseChart } from '../charts';
 	import ParameterLandscape3D from '../visualization/ParameterLandscape3D.svelte';
+	import TradeSignalsAccordion from './TradeSignalsAccordion.svelte';
 	import { generateChartData, parseTimestamp } from '$lib/utils/chartUtils.js';
 	
 	// API URL constant for environment-specific endpoints
@@ -89,6 +90,9 @@
 	
 	// Chart data
 	let backtestChartData = null;
+	
+	// Expanded row state for trade signals
+	let expandedResultIndex = null;
 	
 	// Preset configurations
 	const presets = [
@@ -211,7 +215,9 @@
 	
 	// Format functions
 	function formatPercent(value) {
-		return (value || 0).toFixed(2) + '%';
+		const num = value || 0;
+		const sign = num >= 0 ? '+' : '';
+		return sign + num.toFixed(2) + '%';
 	}
 	
 	function formatBTC(value) {
@@ -494,9 +500,14 @@
 						<div class="results-metrics">
 							<div class="metric-item">
 								<div class="metric-label">BTC Growth</div>
-								<div class="metric-value positive">
-									+{formatPercent(latestResult.btcGrowthPercent)}
+								<div class="metric-value {latestResult.btcGrowthPercent >= 0 ? 'positive' : 'negative'}">
+									{formatPercent(latestResult.btcGrowthPercent)}
 								</div>
+								{#if latestResult.tokenAccumulationPercent !== undefined}
+									<div class="metric-sublabel">
+										Token Accumulation: {formatPercent(latestResult.tokenAccumulationPercent)}
+									</div>
+								{/if}
 							</div>
 							<div class="metric-item">
 								<div class="metric-label">Total Trades</div>
@@ -579,7 +590,7 @@
 						
 						<div class="best-result">
 							<div class="best-score">
-								+{formatPercent(bestResult.btcGrowthPercent)} BTC Growth
+								{formatPercent(bestResult.btcGrowthPercent)} BTC Growth
 							</div>
 							<div class="best-params">
 								<div class="param-chip">Rebalance: {(bestResult.parameters?.rebalanceThreshold || 0).toFixed(1)}%</div>
@@ -632,8 +643,8 @@
 											})}
 										</td>
 										<td class="growth-cell">
-											<span class="growth-value positive">
-												+{formatPercent(result.btcGrowthPercent)}
+											<span class="growth-value {result.btcGrowthPercent >= 0 ? 'positive' : 'negative'}">
+												{formatPercent(result.btcGrowthPercent)}
 											</span>
 										</td>
 										<td class="trades-cell">
@@ -668,15 +679,24 @@
 											<button 
 												class="mini-btn view"
 												on:click={() => {
-													// TODO: Show detailed view modal
-													console.log('Detailed view for:', result);
+													expandedResultIndex = expandedResultIndex === index ? null : index;
 												}}
-												title="View detailed results"
+												title="View trade signals"
 											>
-												View
+												{expandedResultIndex === index ? 'Hide' : 'View'}
 											</button>
 										</td>
 									</tr>
+									{#if expandedResultIndex === index && result.trades}
+										<tr>
+											<td colspan="7" class="accordion-cell">
+												<TradeSignalsAccordion 
+													trades={result.trades || []}
+													isExpanded={true}
+												/>
+											</td>
+										</tr>
+									{/if}
 								{/each}
 							</tbody>
 						</table>
@@ -1129,6 +1149,13 @@
 		letter-spacing: 0.5px;
 		margin-bottom: 4px;
 	}
+	
+	.metric-sublabel {
+		font-size: 9px;
+		color: #666;
+		margin-top: 4px;
+		font-weight: 400;
+	}
 
 	.metric-value {
 		font-size: 14px;
@@ -1321,6 +1348,13 @@
 
 	.mini-btn.view:hover {
 		background: rgba(59, 130, 246, 0.2);
+	}
+	
+	/* Accordion Cell */
+	.accordion-cell {
+		padding: 0 !important;
+		background: rgba(0, 0, 0, 0.2);
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
 	}
 
 	/* No Results */

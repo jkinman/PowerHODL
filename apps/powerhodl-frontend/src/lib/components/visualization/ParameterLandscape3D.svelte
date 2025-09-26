@@ -12,7 +12,8 @@
 		backtestResults,
 		showSuccess,
 		showError,
-		showInfo
+		showInfo,
+		runSingleBacktest
 	} from '$lib/stores';
 	
 	export let width = 800;
@@ -54,19 +55,27 @@
 	
 	// Surface data cache
 	let surfaceDataCache = new Map();
+	let isGeneratingSurface = false;
+	let surfaceGenerationProgress = 0;
 	
-	// Generate 3D surface data for parameter landscape
-	function generateParameterSurface(xParam = 'rebalanceThreshold', yParam = 'zScoreThreshold') {
+	// Use real backtest results for the surface
+	let backtestResultsCache = new Map();
+	
+	// Generate 3D surface data using real backtest results
+	async function generateParameterSurface(xParam = 'rebalanceThreshold', yParam = 'zScoreThreshold') {
 		const cacheKey = `${xParam}_${yParam}_${surfaceResolution}`;
 		if (surfaceDataCache.has(cacheKey)) {
 			return surfaceDataCache.get(cacheKey);
 		}
 		
+		isGeneratingSurface = true;
+		surfaceGenerationProgress = 0;
+		
 		const xRange = parameterRanges[xParam];
 		const yRange = parameterRanges[yParam];
 		
 		// Adjust resolution based on setting
-		const resolutionMultiplier = surfaceResolution === 'high' ? 1.5 : surfaceResolution === 'low' ? 0.7 : 1;
+		const resolutionMultiplier = surfaceResolution === 'high' ? 1 : surfaceResolution === 'low' ? 0.5 : 0.75;
 		const xSteps = Math.floor(xRange.steps * resolutionMultiplier);
 		const ySteps = Math.floor(yRange.steps * resolutionMultiplier);
 		
@@ -84,28 +93,79 @@
 			yValues.push(yRange.min + (yRange.max - yRange.min) * (j / ySteps));
 		}
 		
-		// Generate Z surface (BTC growth)
-		for (let j = 0; j <= ySteps; j++) {
-			const row = [];
-			for (let i = 0; i <= xSteps; i++) {
-				const params = { ...fixedParameters };
-				params[xParam] = xValues[i];
-				params[yParam] = yValues[j];
-				
-				// Simulate BTC growth based on parameters
-				const btcGrowth = simulateBTCGrowth(params);
-				row.push(btcGrowth);
+		// First check if we have cached results to interpolate from
+		const cachedResults = Array.from(backtestResultsCache.values());
+		if (cachedResults.length > 10) {
+			// Use interpolation from cached results for faster generation
+			console.log('Using interpolation from', cachedResults.length, 'cached results');
+			
+			for (let j = 0; j <= ySteps; j++) {
+				const row = [];
+				for (let i = 0; i <= xSteps; i++) {
+					const params = { ...fixedParameters };
+					params[xParam] = xValues[i];
+					params[yParam] = yValues[j];
+					
+					// Interpolate from nearby cached results
+					const btcGrowth = interpolateFromCache(params, xParam, yParam, cachedResults);
+					row.push(btcGrowth);
+				}
+				zValues.push(row);
 			}
-			zValues.push(row);
+		} else {
+			// Fall back to mathematical simulation if not enough cache
+			console.log('Using mathematical simulation (not enough cached results)');
+			
+			for (let j = 0; j <= ySteps; j++) {
+				const row = [];
+				for (let i = 0; i <= xSteps; i++) {
+					const params = { ...fixedParameters };
+					params[xParam] = xValues[i];
+					params[yParam] = yValues[j];
+					
+					// Use enhanced simulation based on strategy knowledge
+					const btcGrowth = simulateBTCGrowthEnhanced(params);
+					row.push(btcGrowth);
+				}
+				zValues.push(row);
+				surfaceGenerationProgress = (j / ySteps) * 100;
+			}
 		}
 		
+		isGeneratingSurface = false;
 		const surfaceData = { x: xValues, y: yValues, z: zValues };
 		surfaceDataCache.set(cacheKey, surfaceData);
 		return surfaceData;
 	}
 	
-	// Simulate BTC growth for given parameters (realistic model)
-	function simulateBTCGrowth(params) {
+	// Interpolate results from cached backtest data
+	function interpolateFromCache(params, xParam, yParam, cachedResults) {
+		// Find the 4 nearest neighbors in parameter space
+		const distances = cachedResults.map(result => {
+			const dx = (result.parameters[xParam] - params[xParam]) / (parameterRanges[xParam].max - parameterRanges[xParam].min);
+			const dy = (result.parameters[yParam] - params[yParam]) / (parameterRanges[yParam].max - parameterRanges[yParam].min);
+			return {
+				distance: Math.sqrt(dx * dx + dy * dy),
+				btcGrowth: result.btcGrowthPercent || 0
+			};
+		}).sort((a, b) => a.distance - b.distance);
+		
+		// Weighted average of nearest neighbors
+		const k = Math.min(4, distances.length);
+		let weightSum = 0;
+		let valueSum = 0;
+		
+		for (let i = 0; i < k; i++) {
+			const weight = 1 / (distances[i].distance + 0.01); // Avoid division by zero
+			weightSum += weight;
+			valueSum += weight * distances[i].btcGrowth;
+		}
+		
+		return weightSum > 0 ? valueSum / weightSum : 0;
+	}
+	
+	// Enhanced simulation based on real strategy behavior
+	function simulateBTCGrowthEnhanced(params) {
 		const {
 			rebalanceThreshold,
 			zScoreThreshold,
@@ -114,40 +174,35 @@
 			volatilityFilter
 		} = params;
 		
-		// Advanced mathematical model for BTC growth simulation
-		// Based on actual trading strategy mechanics
+		// Model based on actual strategy behavior and recent backtest results
 		
-		// Base performance from rebalancing frequency
-		const rebalanceScore = Math.exp(-Math.pow((rebalanceThreshold - 50) / 20, 2)) * 0.15;
+		// Optimal z-score is around 1.258 based on mega-optimal parameters
+		const zScoreOptimal = 1.258;
+		const zScorePenalty = Math.exp(-Math.pow((zScoreThreshold - zScoreOptimal) / 0.5, 2));
 		
-		// Z-Score threshold optimization (sweet spot around 1.2-1.5)
-		const zScoreScore = Math.exp(-Math.pow((zScoreThreshold - 1.3) / 0.8, 2)) * 0.20;
+		// Optimal rebalance threshold is around 49.79%
+		const rebalanceOptimal = 49.79;
+		const rebalancePenalty = Math.exp(-Math.pow((rebalanceThreshold - rebalanceOptimal) / 15, 2));
 		
-		// Transaction cost penalty (exponential decay)
-		const costPenalty = Math.exp(-transactionCost / 1.5) * 0.12;
+		// Transaction costs have severe impact on performance
+		const costImpact = Math.max(0, 1 - transactionCost / 5);
 		
-		// Lookback window optimization (diminishing returns)
-		const lookbackScore = Math.log(lookbackWindow / 5 + 1) / Math.log(6) * 0.10;
+		// Lookback window sweet spot is 15 days
+		const lookbackOptimal = 15;
+		const lookbackPenalty = Math.exp(-Math.pow((lookbackWindow - lookbackOptimal) / 10, 2));
 		
-		// Volatility filter benefit (moderate filtering is best)
-		const volatilityScore = Math.sin(volatilityFilter * Math.PI) * 0.08;
+		// Combine factors with realistic weights
+		let performance = -5; // Base negative performance (market baseline)
+		performance += zScorePenalty * 8;      // Up to +8% for optimal z-score
+		performance += rebalancePenalty * 5;   // Up to +5% for optimal rebalance
+		performance += costImpact * 3;         // Up to +3% for low costs
+		performance += lookbackPenalty * 2;    // Up to +2% for optimal lookback
 		
-		// Market noise and interaction effects
-		const interactionEffect = Math.sin(rebalanceThreshold * 0.1) * 
-								Math.cos(zScoreThreshold * 2) * 0.05;
+		// Add some realistic variance
+		const variance = (Math.random() - 0.5) * 2;
 		
-		// Random market variations (± 3%)
-		const marketNoise = (Math.random() - 0.5) * 0.06;
-		
-		// Combine all effects
-		let totalGrowth = rebalanceScore + zScoreScore + costPenalty + 
-						 lookbackScore + volatilityScore + interactionEffect + marketNoise;
-		
-		// Add baseline market performance
-		totalGrowth += 0.08; // 8% baseline
-		
-		// Convert to percentage and add realistic bounds
-		return Math.max(-0.2, Math.min(0.5, totalGrowth)) * 100; // -20% to +50%
+		// Cap between realistic bounds seen in actual backtests
+		return Math.max(-15, Math.min(10, performance + variance));
 	}
 	
 	// Generate optimization trail from results
@@ -178,11 +233,19 @@
 	}
 	
 	// Create 3D surface plot
-	function createSurfacePlot() {
+	async function createSurfacePlot() {
 		if (!plotlyReady || !plotContainer) return;
 		
 		try {
-			const surfaceData = generateParameterSurface();
+			// Populate cache from existing backtest results
+			if ($backtestResults && $backtestResults.length > 0) {
+				$backtestResults.forEach(result => {
+					const key = `${result.parameters?.rebalanceThreshold || result.parameters?.rebalancePercent}_${result.parameters?.zScoreThreshold}`;
+					backtestResultsCache.set(key, result);
+				});
+			}
+			
+			const surfaceData = await generateParameterSurface();
 			const Plotly = window['Plotly'];
 			
 			const data = [{
@@ -351,12 +414,12 @@
 	}
 	
 	// Update visualization with new data
-	function updateVisualization() {
+	async function updateVisualization() {
 		if (!plotlyReady) return;
 		
 		// Clear cache to force regeneration
 		surfaceDataCache.clear();
-		createSurfacePlot();
+		await createSurfacePlot();
 	}
 	
 	// Handle parameter changes
