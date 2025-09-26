@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/cron/market-monitor",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/signal-generator",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/trade-executor",
+      "schedule": "*/15 * * * *"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "TRADING_MODE": "metamask",
+    "DEX_SIMULATION_MODE": "true"
+  }
+}

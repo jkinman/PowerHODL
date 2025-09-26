@@ -70,13 +70,14 @@ cp env.example .env.local
 # Sign up at neon.tech (free tier included)
 ```
 
-### 3. Launch Dashboard
+### 3. Launch Dashboard & API
 ```bash
-npm run dev:dashboard
-# Visit http://localhost:8082
+# Start both frontend and backend
+npm run dev:frontend    # Dashboard: http://localhost:9002
+npm run dev:api        # API: http://localhost:9001
 ```
 
-**That's it!** Your professional trading dashboard is live.
+**That's it!** Your professional trading dashboard and API are live.
 
 ---
 
@@ -96,22 +97,48 @@ npm run dev:dashboard
 
 ## Production Deployment
 
-### Vercel (Recommended - Free)
+### Dual Vercel Projects Setup
+
+PowerHODL uses **two separate Vercel projects** for optimal performance and scaling:
+
+#### 1. Deploy Backend (APIs + Cron Jobs)
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
-# Deploy with database
+# Deploy backend from API directory
+cd apps/powerhodl-api
 vercel --prod
+
+# Add environment variables
 vercel env add DATABASE_URL production
+vercel env add TRADING_MODE production     # Set to "metamask" or "simulation"
+vercel env add DEX_SIMULATION_MODE production  # Set to "true" for safety
 ```
 
+#### 2. Deploy Frontend (Dashboard)
+```bash
+# Deploy frontend from frontend directory  
+cd apps/powerhodl-frontend
+vercel --prod
+
+# Connect to backend
+vercel env add PUBLIC_API_URL production   # Your backend Vercel URL
+```
+
+### Automated Cron Jobs (Backend Project)
+The backend automatically runs these scheduled tasks:
+- **Market Monitor**: Every 5 minutes → Collect price data
+- **Signal Generator**: Every 10 minutes → Analyze trading opportunities  
+- **Trade Executor**: Every 15 minutes → Execute profitable trades
+
 ### What You Get:
-- **Automated Cron Jobs**: Market monitoring every 5 minutes
-- **Signal Generation**: AI analysis and trade recommendations  
-- **Trade Execution**: Automatic portfolio rebalancing
-- **Database Logging**: Full trade history and performance tracking
-- **Professional Dashboard**: Real-time monitoring interface
+- **Unified Trading Logic**: Same engine for live trading and backtesting
+- **Professional Dashboard**: Real-time SvelteKit interface
+- **Serverless APIs**: Auto-scaling Node.js endpoints
+- **Automated Trading**: MetaMask integration for DEX trades
+- **Database Persistence**: Complete trade history and analytics
+- **Separated Concerns**: Frontend and backend scale independently
 
 ---
 
@@ -133,29 +160,53 @@ vercel env add DATABASE_URL production
 
 ## API Endpoints
 
-Perfect for integrations and custom applications:
+Perfect for integrations and custom applications. All endpoints use the **unified trading engine**:
 
 ```bash
-GET /api/signal          # Current trading signal
-GET /api/portfolio       # Portfolio status
-GET /api/backtest        # Run historical analysis
-GET /api/historical      # Historical ratio and Z-score data
+# Trading Signals (Live Analysis)
+GET /api/signal                    # Current trading signal using TradingEngine
+POST /api/signal                   # Generate signal with custom params
+
+# Backtesting (Historical Analysis) 
+POST /api/backtest                 # Run backtest using same TradingEngine logic
+GET /api/backtest                  # Quick backtest with mega-optimal params
+
+# Market Data
+GET /api/historical?days=30        # Historical ratio and Z-score data
+GET /api/portfolio                 # Current portfolio status
+
+# Automated Trading (Cron Jobs)
+GET /api/cron/market-monitor       # Market data collection
+GET /api/cron/signal-generator     # Signal analysis
+GET /api/cron/trade-executor       # Trade execution
 ```
 
-### Example Response
+### Example Response (Unified Signal)
 ```json
 {
-  "signal": {
-    "action": "BUY_ETH",
-    "zScore": -1.34,
-    "strength": 0.89,
-    "confidence": 0.76
-  },
-  "portfolio": {
-    "btcAmount": "0.05432000",
-    "ethAmount": "1.23456000",
-    "totalValueBTC": "0.10485000"
+  "signal": "BUY_ETH_SELL_BTC",
+  "zScore": -1.34,
+  "signalStrength": 1.06,
+  "signalConfidence": 0.89,
+  "shouldTrade": true,
+  "reasoning": "ETH cheap relative to BTC (Z-score: -1.340)",
+  "parameters": {
+    "zScoreThreshold": 1.257672,
+    "rebalanceThreshold": 0.49792708,
+    "transactionCost": 0.016646603
   }
+}
+```
+
+### Backtest Response
+```json
+{
+  "strategyReturnPercent": 15.45,
+  "numTrades": 47,
+  "sharpeRatio": 1.23,
+  "maxDrawdownPercent": 8.3,
+  "portfolio": [...],
+  "trades": [...]
 }
 ```
 
@@ -163,24 +214,67 @@ GET /api/historical      # Historical ratio and Z-score data
 
 ## Development
 
+### Monorepo Structure
+```
+/apps
+  /powerhodl-frontend    # SvelteKit Dashboard (Vercel Project 1)
+  /powerhodl-api         # Node.js Serverless APIs (Vercel Project 2)
+/packages
+  /shared               # Shared utilities
+```
+
 ### Available Scripts
 ```bash
-npm run dev:dashboard    # Start dashboard (port 8082)
-npm run dev:api         # Start API server (port 3000)
-npm run seed            # Populate historical data
-npm run test:all        # Run all tests
-npm run deploy          # Deploy to production
+npm install               # Install workspace dependencies
+
+# Frontend (SvelteKit Dashboard)
+npm run dev:frontend     # Start dashboard (port 9002)
+npm run build:frontend   # Build for production
+
+# Backend (API & Serverless Functions)
+npm run dev:api         # Start API server (port 9001)
+npm run build:api       # Build for production
+
+# Deployment
+npm run deploy:frontend  # Deploy frontend to Vercel
+npm run deploy:api      # Deploy backend to Vercel
+```
+
+### Unified Trading Engine Architecture
+PowerHODL now uses a **unified trading engine** that ensures identical logic between live trading and backtesting:
+
+```
+TradingEngine.js (Single Source of Truth)
+├── makeTradeDecision()     # Core function used by both systems
+├── calculateZScore()       # Identical analysis
+├── generateSignal()        # Same trading signals
+└── executeTradeStep()      # Consistent execution
+
+Used by:
+├── Live Trading           # MegaOptimalStrategy → TradingEngine
+├── Backtesting           # ETHBTCAnalyzer → TradingEngine  
+├── API Endpoints         # All use same engine
+└── Cron Jobs            # Automated trading
 ```
 
 ### Project Structure
 ```
 PowerHODL/
-├── dashboard/           # Professional trading interface
-├── api/               # Serverless functions & cron jobs
-├── lib/services/      # Core trading logic
-├── src/               # Strategy & optimization
-├── data/              # Historical market data
-└── database/          # SQL schema & migrations
+├── apps/
+│   ├── powerhodl-frontend/    # SvelteKit Dashboard
+│   │   ├── src/lib/stores/    # State management
+│   │   ├── src/lib/components/# UI components  
+│   │   └── vercel.json        # Frontend deployment config
+│   └── powerhodl-api/         # Serverless APIs & Trading Engine
+│       ├── src/TradingEngine.js  # UNIFIED TRADING LOGIC
+│       ├── src/strategy.js       # MegaOptimal parameters
+│       ├── src/analyzer.js       # Backtest engine
+│       ├── api/                  # Serverless endpoints
+│       ├── api/cron/            # Automated trading jobs
+│       └── vercel.json          # Backend deployment config
+├── packages/shared/           # Shared utilities
+├── data/                     # Historical market data
+└── database/                # SQL schema & migrations
 ```
 
 ---
@@ -224,10 +318,10 @@ Stop losing BTC to emotional trading. Start accumulating BTC systematically.
 
 ```bash
 git clone https://github.com/jkinman/PowerHODL.git
-cd PowerHODL && npm install && npm run dev:dashboard
+cd PowerHODL && npm install && npm run dev:frontend
 ```
 
-**[Launch Dashboard](http://localhost:8082)** • **[View Live Demo](https://abitrage-ratio-pair.vercel.app)** • **[Read Docs](https://github.com/jkinman/PowerHODL/wiki)**
+**[Launch Dashboard](http://localhost:9002)** • **[View Live Demo](https://powerhodl-frontend-1pz4qo0yl-joel-kinmans-projects.vercel.app)** • **[Read Docs](https://github.com/jkinman/PowerHODL/wiki)**
 
 ---
 
