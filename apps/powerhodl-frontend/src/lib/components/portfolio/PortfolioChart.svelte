@@ -123,43 +123,20 @@
 		};
 	}
 	
-	// Generate demo data for empty state
-	function generateDemoData() {
-		const now = new Date();
-		const demoData = [];
-		
-		for (let i = 29; i >= 0; i--) {
-			const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-			const progress = (30 - i) / 30;
-			
-			// Simulate BTC accumulation with some volatility
-			const baseValue = 0.5;
-			const growth = progress * 0.1;
-			const volatility = Math.sin(i * 0.5) * 0.02;
-			const totalBTC = baseValue + growth + volatility;
-			
-			const btcAmount = baseValue * 0.6 + progress * 0.05;
-			const ethValueBTC = totalBTC - btcAmount;
-			
-			demoData.push({
-				timestamp: date.toISOString(),
-				totalValueBTC: Math.max(0.4, totalBTC),
-				btcAmount: Math.max(0.2, btcAmount),
-				ethValueBTC: Math.max(0.1, ethValueBTC),
-				trades: Math.floor(Math.random() * 3)
-			});
-		}
-		
-		return demoData;
-	}
-	
 	// Update chart data when portfolio history changes
 	function updateChartData() {
 		isLoading = true;
 		
-		// Use real data if available, otherwise demo data
-		const historyData = $portfolioHistory.length > 0 ? $portfolioHistory : generateDemoData();
-		chartData = processChartData(historyData);
+		// Only use real data from the store
+		if ($portfolioHistory.length > 0) {
+			chartData = processChartData($portfolioHistory);
+		} else {
+			// No data available - show empty state
+			chartData = {
+				labels: [],
+				datasets: []
+			};
+		}
 		
 		isLoading = false;
 	}
@@ -214,11 +191,11 @@
 		loadingMessage="Loading portfolio data..."
 	/>
 	
-	<!-- Demo Data Notice -->
+	<!-- Empty State Notice -->
 	{#if $portfolioHistory.length === 0}
-		<div class="demo-notice">
-			<span class="demo-icon">🧪</span>
-			<span class="demo-text">Showing simulated BTC accumulation data</span>
+		<div class="empty-notice">
+			<span class="empty-icon">📊</span>
+			<span class="empty-text">No portfolio history available yet</span>
 		</div>
 	{/if}
 	
@@ -308,8 +285,8 @@
 		color: #f59e0b;
 	}
 
-	/* Demo Notice */
-	.demo-notice {
+	/* Empty Notice */
+	.empty-notice {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -324,7 +301,7 @@
 		font-weight: 500;
 	}
 
-	.demo-icon {
+	.empty-icon {
 		font-size: 12px;
 	}
 

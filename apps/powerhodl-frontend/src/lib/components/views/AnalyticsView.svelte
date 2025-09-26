@@ -12,53 +12,51 @@
 	} from '$lib/stores';
 	import { MarketChart, PerformanceChart } from '../charts';
 	
-	// Generate some demo market history on mount
-	onMount(() => {
-		// Add demo historical data
-		const now = new Date();
-		const historicalData = [];
-		
-		for (let i = 90; i >= 0; i--) {
-			const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-			
-			// Generate realistic ETH/BTC ratio with trends
-			const baseRatio = 0.037;
-			const longTrend = Math.sin(i * 0.05) * 0.003; // Long-term trend
-			const shortTrend = Math.sin(i * 0.3) * 0.001; // Short-term volatility
-			const noise = (Math.random() - 0.5) * 0.0005; // Random noise
-			
-			const ratio = baseRatio + longTrend + shortTrend + noise;
-			
-			// Calculate Z-Score (deviation from mean)
-			const meanRatio = 0.037;
-			const stdDev = 0.002;
-			const zscore = (ratio - meanRatio) / stdDev;
-			
-			historicalData.push({
-				timestamp: date.toISOString(),
-				ethBtcRatio: Math.max(0.03, Math.min(0.045, ratio)),
-				zScore: Math.max(-3, Math.min(3, zscore)),
-				volume: Math.random() * 1000000 + 500000,
-				ethPriceUSD: 2500 + Math.sin(i * 0.1) * 200,
-				btcPriceUSD: 65000 + Math.sin(i * 0.08) * 5000
-			});
+	// API URL
+	const __API_URL__ = import.meta.env.VITE_API_URL || 'http://localhost:9001';
+	
+	// Fetch real market history on mount
+	onMount(async () => {
+		try {
+			// Fetch historical data from API
+			const response = await fetch(`${__API_URL__}/api/historical?days=90`);
+			if (response.ok) {
+				const data = await response.json();
+				
+				// Add to store
+				const historicalData = data.data || data.history || [];
+				if (historicalData.length > 0) {
+					historicalData.forEach(item => addHistoricalData({
+						timestamp: item.timestamp || item.date,
+						ethBtcRatio: item.ethBtcRatio || (item.close ? item.close / 100000 : 0), // Convert if needed
+						zScore: item.zScore || 0,
+						volume: item.volume || 0,
+						ethPriceUSD: item.ethPriceUSD || 0,
+						btcPriceUSD: item.btcPriceUSD || 0
+					}));
+					
+					// Update current market data with latest
+					const latest = historicalData[historicalData.length - 1];
+					updateMarketData({
+						ethBtcRatio: latest.ethBtcRatio || (latest.close ? latest.close / 100000 : 0),
+						ethPriceUSD: latest.ethPriceUSD || 0,
+						btcPriceUSD: latest.btcPriceUSD || 0,
+						zScore: latest.zScore || 0,
+						volume: latest.volume || 0,
+						source: 'database'
+					});
+					
+					showInfo('Analytics Loaded', `Market analysis charts loaded with ${historicalData.length} data points from database`);
+				} else {
+					showInfo('No Data', 'No historical data available yet');
+				}
+			} else {
+				throw new Error('Failed to fetch historical data');
+			}
+		} catch (error) {
+			console.error('Failed to load analytics data:', error);
+			showInfo('Error', 'Failed to load market data. Please try again.');
 		}
-		
-		// Add to store
-		historicalData.forEach(data => addHistoricalData(data));
-		
-		// Update current market data
-		const latest = historicalData[historicalData.length - 1];
-		updateMarketData({
-			ethBtcRatio: latest.ethBtcRatio,
-			ethPriceUSD: latest.ethPriceUSD,
-			btcPriceUSD: latest.btcPriceUSD,
-			zScore: latest.zScore,
-			volume: latest.volume,
-			source: 'demo'
-		});
-		
-		showInfo('Analytics Loaded', 'Market analysis charts loaded with 90 days of demo data');
 	});
 </script>
 

@@ -5,7 +5,7 @@
  */
 
 import { DatabaseService } from '../lib/services/DatabaseService.js';
-import MegaOptimalStrategy from '../src/strategy.js';
+import { SimpleStrategy } from '../src/SimpleStrategy.js';
 import { ethers } from 'ethers';
 
 export default async function handler(req, res) {
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
         }
         
         // Get current strategy parameters
-        const strategy = new MegaOptimalStrategy();
+        const strategy = new SimpleStrategy();
         
         // Calculate performance metrics
         const initialValue = 0.5; // Starting BTC value

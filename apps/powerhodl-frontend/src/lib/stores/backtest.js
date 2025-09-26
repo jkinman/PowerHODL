@@ -187,9 +187,9 @@ export async function runSingleBacktest(parameters) {
 			body: JSON.stringify({
 				parameters: {
 					zScoreThreshold: parameters.zScoreThreshold,
-					rebalanceThreshold: parameters.rebalancePercent || parameters.rebalanceThreshold,
+					rebalancePercent: parameters.rebalancePercent || parameters.rebalanceThreshold,
 					transactionCost: parameters.transactionCost,
-					lookbackWindow: parameters.lookbackWindow,
+					lookbackDays: parameters.lookbackWindow || parameters.lookbackDays,
 					volatilityFilter: parameters.volatilityFilter
 				},
 				useRealData: parameters.useRealData !== false, // Use parameter or default to true

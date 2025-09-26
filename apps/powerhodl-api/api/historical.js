@@ -5,7 +5,7 @@
  */
 
 import { DatabaseService } from '../lib/services/DatabaseService.js';
-import ETHBTCDataCollector from '../src/dataCollector.js';
+// Data collector removed - using database only
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -53,9 +53,11 @@ export default async function handler(req, res) {
                 historicalData = dbData.map(item => ({
                     date: extractDateOnly(item.collected_at),
                     timestamp: normalizeDate(item.collected_at),
-                    ethBtcRatio: parseFloat(item.eth_btc_ratio),
-                    close: parseFloat(item.eth_price_usd || item.eth_price),
-                    volume: parseFloat(item.volume_24h || 0),
+                    ethBtcRatio: parseFloat(item.eth_btc_ratio || 0),
+                    ethPriceUSD: parseFloat(item.eth_price_usd || 0),
+                    btcPriceUSD: parseFloat(item.btc_price_usd || 0),
+                    close: parseFloat(item.eth_btc_ratio || 0), // Use ratio for close, not USD price
+                    volume: parseFloat(item.eth_btc_volume_24h || item.volume_24h || 0),
                     zScore: parseFloat(item.z_score || 0)
                 }));
                 dataSource = 'database';

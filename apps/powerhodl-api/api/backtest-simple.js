@@ -4,7 +4,7 @@
  * Uses SimpleBacktestEngine - no complex layers!
  */
 
-import { SimpleBacktestEngine } from '../src/SimpleBacktestEngine.js';
+import { SimpleBacktestEngine } from '../../packages/simple-backtest/SimpleBacktestEngine.js';
 import { DatabaseService } from '../lib/services/DatabaseService.js';
 
 export default async function handler(req, res) {
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
         // Convert parameters to SimpleBacktestEngine format
         const engineParams = {
             zScoreThreshold: params.zScoreThreshold || 1.5,
-            rebalancePercent: params.rebalancePercent || params.rebalanceThreshold || 10,
+            rebalancePercent: params.rebalanceThreshold || 10,
             transactionCost: params.transactionCost || 0.1,
             lookbackDays: params.lookbackWindow || 15
         };

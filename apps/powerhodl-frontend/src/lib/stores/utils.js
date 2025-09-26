@@ -126,11 +126,18 @@ async function initializePortfolio() {
 		if (response.ok) {
 			const data = await response.json();
 			
+			// API returns nested structure: { portfolio: { current: {...} } }
+			const currentPortfolio = data.portfolio?.current || {};
+			
 			const { updatePortfolio } = await import('./portfolio.js');
 			updatePortfolio({
-				btcAmount: data.btcAmount || 0.5,
-				ethAmount: data.ethAmount || 0.5
+				btcAmount: currentPortfolio.btcAmount || 0.1,
+				ethAmount: currentPortfolio.ethAmount || 2.0,
+				ethValueBTC: currentPortfolio.ethValueBTC || 0.0,
+				totalValueBTC: currentPortfolio.totalValueBTC || 0.1
 			});
+			
+			console.log('✅ Portfolio initialized from API:', currentPortfolio);
 		}
 	} catch (error) {
 		console.warn('Failed to initialize portfolio from API:', error);

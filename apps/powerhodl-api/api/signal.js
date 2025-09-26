@@ -4,9 +4,8 @@
  * Real-time trading signal generation endpoint
  */
 
-import MegaOptimalStrategy from '../src/strategy.js';
+import { SimpleStrategy } from '../src/SimpleStrategy.js';
 import { DatabaseService } from '../lib/services/DatabaseService.js';
-import ETHBTCDataCollector from '../src/dataCollector.js';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -34,8 +33,8 @@ export default async function handler(req, res) {
         console.log('🎯 [SIGNAL API] Generating trading signal...');
         const startTime = Date.now();
         
-        // Initialize strategy with mega-optimal parameters
-        const strategy = new MegaOptimalStrategy();
+        // Initialize simplified strategy
+        const strategy = new SimpleStrategy();
         console.log(`📊 [SIGNAL API] Strategy initialized: Z-Score ±${strategy.parameters.zScoreThreshold}, ${strategy.parameters.lookbackWindow}d lookback`);
         
         // Fetch market data from database
@@ -51,10 +50,8 @@ export default async function handler(req, res) {
             }
         } catch (error) {
             console.log('📥 [SIGNAL API] Database data unavailable, falling back to cached data...');
-            // Fallback to cached data if database is unavailable
-            const collector = new ETHBTCDataCollector();
-            data = await collector.loadData('eth_btc_data_2025-09-24.json');
-            console.log(`📊 [SIGNAL API] Collected ${data.length} days of fresh data`);
+            // No fallback - database is required for real data
+            throw error;
         }
         
         // Validate data availability

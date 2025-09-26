@@ -77,14 +77,14 @@ export async function GET({ url }) {
 			ethPercentage: ((portfolioState.ethAmount * ethBtcRatio) / portfolioState.totalValueBTC) * 100
 		};
 		
-		// Performance metrics (simplified for demo)
+		// Performance metrics (real calculations needed from historical data)
 		const performance = {
-			btcGrowthPercent: 12.45,
+			btcGrowthPercent: 0, // TODO: Calculate from actual historical portfolio data
 			period: '30d',
-			sharpeRatio: 1.23,
-			maxDrawdown: -5.2,
+			sharpeRatio: 0,
+			maxDrawdown: 0,
 			totalTrades: recentTrades.length,
-			winRate: 68.5
+			winRate: 0
 		};
 		
 		const duration = Date.now() - startTime;

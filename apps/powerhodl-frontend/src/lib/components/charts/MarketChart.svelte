@@ -248,47 +248,23 @@
 		}
 	}
 	
-	// Generate demo data when no real data available
-	function generateDemoData() {
-		const now = new Date();
-		const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
-		const data = [];
-		
-		for (let i = days - 1; i >= 0; i--) {
-			const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-			
-			// Generate realistic ETH/BTC ratio with trend and volatility
-			const baseRatio = 0.037;
-			const trend = Math.sin(i * 0.1) * 0.002;
-			const volatility = Math.sin(i * 0.8) * 0.001;
-			const ratio = baseRatio + trend + volatility;
-			
-			// Generate Z-Score based on deviation from mean
-			const meanRatio = 0.037;
-			const stdDev = 0.002;
-			const zscore = (ratio - meanRatio) / stdDev;
-			
-			data.push({
-				timestamp: date.toISOString(),
-				ethBtcRatio: Math.max(0.03, ratio),
-				zScore: Math.max(-3, Math.min(3, zscore))
-			});
-		}
-		
-		return data;
-	}
-	
 	// Update chart data when dependencies change
 	function updateChartData() {
 		try {
 			isLoading = true;
 			error = null;
 			
-			// Use real data if available, otherwise demo data
-			const data = $historicalData.length > 0 ? $historicalData : generateDemoData();
-			
-			chartData = processHistoricalData(data);
-			chartConfig = chartConfigs[chartType];
+			// Only use real data from the store
+			if ($historicalData.length > 0) {
+				chartData = processHistoricalData($historicalData);
+				chartConfig = chartConfigs[chartType];
+			} else {
+				// No data available - show empty state
+				chartData = {
+					labels: [],
+					datasets: []
+				};
+			}
 			
 			isLoading = false;
 			

@@ -18,90 +18,51 @@
 	import RecentTrades from '../portfolio/RecentTrades.svelte';
 	import GradientDescentSandbox from '../backtest/GradientDescentSandboxSimplified.svelte';
 	
-	// Generate some demo portfolio history on mount
-	onMount(() => {
-		// Add some demo portfolio snapshots
-		const now = new Date();
-		for (let i = 10; i >= 0; i--) {
-			const date = new Date(now.getTime() - i * 6 * 60 * 60 * 1000); // Every 6 hours
-			const progress = (10 - i) / 10;
-			
-			// Simulate portfolio growth
-			const baseValue = 0.5;
-			const growth = progress * 0.08; // 8% growth simulation
-			const volatility = Math.sin(i * 0.8) * 0.015; // Some volatility
-			
-			const totalBTC = baseValue + growth + volatility;
-			const btcAmount = 0.5 + progress * 0.02; // Slight BTC accumulation
-			const ethValueBTC = totalBTC - btcAmount;
-			
-			addPortfolioSnapshot({
-				totalValueBTC: Math.max(0.4, totalBTC),
-				btcAmount: Math.max(0.45, btcAmount),
-				ethValueBTC: Math.max(0.05, ethValueBTC),
-				ethAmount: 8.234 - progress * 0.5, // Simulate some ETH being traded
-				timestamp: date.toISOString(),
-				trades: Math.floor(Math.random() * 2)
-			});
-		}
-		
-		// Add some demo trades
-		const trades = [
-			{
-				id: 'trade_1',
-				action: 'SELL_ETH',
-				type: 'SIGNAL',
-				eth_amount: 0.234,
-				btc_amount: 0.008,
-				reason: 'Z-Score exceeded threshold (1.45), ETH overvalued vs BTC',
-				status: 'completed',
-				profit: 0.002,
-				fees: 0.0001,
-				executionTime: 1250,
-				created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
-			},
-			{
-				id: 'trade_2',
-				action: 'BUY_ETH',
-				type: 'REBALANCE',
-				eth_amount: 0.156,
-				btc_amount: 0.006,
-				reason: 'Portfolio rebalancing to maintain 50/50 target allocation',
-				status: 'completed',
-				profit: 0.001,
-				fees: 0.00008,
-				executionTime: 980,
-				created_at: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString()
-			},
-			{
-				id: 'trade_3',
-				action: 'SELL_ETH',
-				type: 'SIGNAL',
-				eth_amount: 0.445,
-				btc_amount: 0.016,
-				reason: 'Strong mean reversion signal detected, ETH/BTC ratio high',
-				status: 'completed',
-				profit: 0.004,
-				fees: 0.00015,
-				executionTime: 1100,
-				created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+	// API URL
+	const __API_URL__ = import.meta.env.VITE_API_URL || 'http://localhost:9001';
+	
+	// Fetch real portfolio data on mount
+	onMount(async () => {
+		try {
+			// Fetch portfolio status from API
+			const portfolioResponse = await fetch(`${__API_URL__}/api/portfolio`);
+			if (portfolioResponse.ok) {
+				const data = await portfolioResponse.json();
+				
+				// Update portfolio with real data
+				if (data.portfolio && data.portfolio.current) {
+					const current = data.portfolio.current;
+					addPortfolioSnapshot({
+						totalValueBTC: current.totalValueBTC,
+						btcAmount: current.btcAmount,
+						ethValueBTC: current.ethValueBTC,
+						ethAmount: current.ethAmount,
+						timestamp: current.lastUpdated || new Date().toISOString(),
+						trades: 0
+					});
+				}
+				
+				// Update trading signal if available
+				if (data.strategy) {
+					updateSignal({
+						signal: data.strategy.status === 'active' ? 'ACTIVE' : 'HOLD',
+						confidence: 0.85,
+						reason: `Strategy: ${data.strategy.name}`
+					});
+				}
 			}
-		];
-		
-		trades.forEach(trade => addTrade(trade));
-		
-		// Update current signal
-		updateSignal({
-			action: 'HOLD',
-			shouldTrade: false,
-			confidence: 0.65,
-			zScore: -0.456,
-			ethBtcRatio: 0.037106,
-			reasoning: 'ETH/BTC ratio within normal range, no trading signal generated'
-		});
-		
-		// Show welcome message
-		showSuccess('Dashboard Loaded', 'Portfolio components loaded with demo data');
+			
+			// Recent trades will be fetched from API when available
+			// For now, leave empty as no real trades have been executed yet
+			const trades = [];
+			
+			// If the API returned recent trades, add them
+			if (data.recentTrades && data.recentTrades.length > 0) {
+				data.recentTrades.forEach(trade => addTrade(trade));
+			}
+		} catch (error) {
+			console.error('Failed to load dashboard data:', error);
+		}
 	});
 </script>
 

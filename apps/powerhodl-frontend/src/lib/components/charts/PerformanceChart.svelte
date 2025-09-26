@@ -211,56 +211,23 @@
 		}
 	}
 	
-	// Generate demo performance data
-	function generateDemoPerformanceData() {
-		const now = new Date();
-		const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 60;
-		const data = [];
-		
-		let portfolioValue = 0.5;
-		let peak = portfolioValue;
-		
-		for (let i = days - 1; i >= 0; i--) {
-			const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-			const progress = (days - i) / days;
-			
-			// Simulate portfolio growth with volatility
-			const baseGrowth = progress * 0.08; // 8% over period
-			const volatility = Math.sin(i * 0.5) * 0.015;
-			const marketCycle = Math.sin(i * 0.1) * 0.02;
-			
-			portfolioValue = 0.5 + baseGrowth + volatility + marketCycle;
-			portfolioValue = Math.max(0.4, portfolioValue); // Don't go below 0.4
-			
-			// Track peak for drawdown
-			if (portfolioValue > peak) peak = portfolioValue;
-			
-			// Simulate ETH/BTC ratio changes
-			const ethBtcRatio = 0.037 + Math.sin(i * 0.2) * 0.003;
-			
-			data.push({
-				timestamp: date.toISOString(),
-				totalValueBTC: portfolioValue,
-				btcAmount: 0.5 + progress * 0.03, // Slight BTC accumulation
-				ethAmount: 0.5 - progress * 0.1, // Some ETH traded
-				ethBtcRatio: ethBtcRatio
-			});
-		}
-		
-		return data;
-	}
-	
 	// Update chart when data changes
 	function updateChart() {
 		try {
 			isLoading = true;
 			error = null;
 			
-			// Use real data if available, otherwise demo data
-			const history = $portfolioHistory.length > 0 ? $portfolioHistory : generateDemoPerformanceData();
-			
-			chartData = processPerformanceData(history);
-			chartConfig = performanceConfig;
+			// Only use real data from the store
+			if ($portfolioHistory.length > 0) {
+				chartData = processPerformanceData($portfolioHistory);
+				chartConfig = performanceConfig;
+			} else {
+				// No data available - show empty state
+				chartData = {
+					labels: [],
+					datasets: []
+				};
+			}
 			
 			isLoading = false;
 			
