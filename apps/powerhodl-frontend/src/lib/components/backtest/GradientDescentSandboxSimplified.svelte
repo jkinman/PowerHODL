@@ -18,6 +18,12 @@
 	} from '$lib/stores';
 	import { BaseChart } from '../charts';
 	import ParameterLandscape3D from '../visualization/ParameterLandscape3D.svelte';
+	import { generateChartData, parseTimestamp } from '$lib/utils/chartUtils.js';
+	
+	// API URL constant for environment-specific endpoints
+	const __API_URL__ = import.meta.env.DEV 
+		? 'http://localhost:9001' 
+		: (import.meta.env.VITE_API_URL || 'https://powerhodl-8l6qjbg2a-joel-kinmans-projects.vercel.app');
 	
 	// Parameter controls
 	let parameters = {
@@ -34,7 +40,7 @@
 		useRealData: true
 	};
 	
-	// Data selection settings
+	// Data selection settings - DEFAULT TO REAL DATA
 	let dataSettings = {
 		useRealData: true,
 		backtestPeriod: 'ALL',
@@ -51,11 +57,11 @@
 		{ value: 'ALL', label: 'All Available', description: 'Complete dataset' }
 	];
 	
-	// Data source options
+	// Data source options - EMPHASIZE REAL DATA
 	let dataSources = [
-		{ value: 'database', label: 'Real Market Data', description: 'Live data from exchanges', available: true },
-		{ value: 'cached', label: 'Cached Historical', description: 'Stored historical data', available: true },
-		{ value: 'simulated', label: 'Test Data', description: 'Generated test scenarios', available: true }
+		{ value: 'database', label: '🔴 LIVE Real Market Data', description: 'Current exchange data from database', available: true },
+		{ value: 'cached', label: '📦 Cached Historical Data', description: 'Stored historical exchange data', available: true },
+		{ value: 'simulated', label: '🧪 Simulated Test Data', description: 'Generated scenarios for testing', available: true }
 	];
 	
 	// Check data availability on mount
@@ -106,16 +112,18 @@
 	// Functions
 	async function handleRunBacktest() {
 		try {
-			// Combine parameters with data settings
+			// Combine parameters with data settings - ALWAYS USE REAL DATA
 			const backtestParams = {
 				...parameters,
 				backtestPeriod: dataSettings.backtestPeriod,
-				useRealData: dataSettings.useRealData && dataSettings.dataSource === 'database'
+				useRealData: dataSettings.dataSource === 'database' // Use database = real data
 			};
+			
+			console.log('🚀 Running backtest with real data:', backtestParams.useRealData);
 			
 			await runSingleBacktest(backtestParams);
 			updateBacktestChart();
-			showSuccess('Backtest Complete', `Strategy tested on ${dataSettings.backtestPeriod === 'ALL' ? 'all available' : dataSettings.backtestPeriod + ' days of'} data`);
+			showSuccess('Backtest Complete', `Strategy tested on ${dataSettings.backtestPeriod === 'ALL' ? 'all available' : dataSettings.backtestPeriod + ' days of'} ${dataSettings.dataSource} data`);
 		} catch (error) {
 			showError('Backtest Failed', error.message);
 		}
@@ -123,15 +131,17 @@
 	
 	async function handleRunOptimization() {
 		try {
-			// Combine parameters with data settings for optimization
+			// Combine parameters with data settings for optimization - ALWAYS USE REAL DATA
 			const optimizationParams = {
 				...parameters,
 				backtestPeriod: dataSettings.backtestPeriod,
-				useRealData: dataSettings.useRealData && dataSettings.dataSource === 'database'
+				useRealData: dataSettings.dataSource === 'database' // Use database = real data
 			};
 			
+			console.log('🔄 Running optimization with real data:', optimizationParams.useRealData);
+			
 			await runOptimization(optimizationSettings.iterations, optimizationParams);
-			showSuccess('Optimization Complete', `${optimizationSettings.iterations} iterations completed on ${dataSettings.backtestPeriod === 'ALL' ? 'all available' : dataSettings.backtestPeriod + ' days of'} data`);
+			showSuccess('Optimization Complete', `${optimizationSettings.iterations} iterations completed on ${dataSettings.backtestPeriod === 'ALL' ? 'all available' : dataSettings.backtestPeriod + ' days of'} ${dataSettings.dataSource} data`);
 		} catch (error) {
 			showError('Optimization Failed', error.message);
 		}
@@ -149,29 +159,28 @@
 		}
 	}
 	
-	// Update backtest chart with results
+	// Update backtest chart with results using unified chart utilities
 	function updateBacktestChart() {
 		if (!$backtestResults || !$backtestResults.length) return;
 		
 		const result = $backtestResults[0]; // Latest result
 		if (!result.portfolioHistory || !result.portfolioHistory.length) return;
 		
-		const labels = [];
+		// Use unified chart data generation
+		const chartInfo = generateChartData(result.portfolioHistory, 'backtest');
+		
 		const portfolioValues = [];
 		const holdingValues = [];
+		const initialBTCValue = result.portfolioHistory[0]?.totalValueBTC || 0.5;
 		
-		result.portfolioHistory.forEach((point, index) => {
-			const date = new Date(point.timestamp);
-			labels.push(date.toLocaleDateString([], { month: 'short', day: 'numeric' }));
+		result.portfolioHistory.forEach((point) => {
 			portfolioValues.push(point.totalValueBTC || 0);
-			
 			// Hold strategy = straight line (no trades, just hold initial BTC allocation)
-			const initialBTCValue = result.portfolioHistory[0]?.totalValueBTC || 0.5;
 			holdingValues.push(initialBTCValue); // Constant - no growth from trading
 		});
 		
 		backtestChartData = {
-			labels,
+			labels: chartInfo.labels,
 			datasets: [
 				{
 					label: 'PowerHODL Strategy',

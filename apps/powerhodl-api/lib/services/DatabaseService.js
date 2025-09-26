@@ -21,10 +21,10 @@ export class DatabaseService {
      */
     initialize() {
         try {
-            const databaseUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
+            const databaseUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || process.env.POSTGRES_URL;
 
             if (!databaseUrl) {
-                throw new Error('Missing Neon database configuration. Set DATABASE_URL or NEON_DATABASE_URL environment variable.');
+                throw new Error('Missing Neon database configuration. Set DATABASE_URL, NEON_DATABASE_URL, or POSTGRES_URL environment variable.');
             }
 
             this.sql = neon(databaseUrl);
@@ -90,6 +90,32 @@ export class DatabaseService {
     }
 
     /**
+     * Get historical market data for backtesting
+     * @param {number} days - Number of days to fetch
+     * @returns {Promise<Array>} Historical market data records
+     */
+    async getHistoricalData(days = 30) {
+        try {
+            // Calculate the date threshold
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+
+            const data = await this.sql`
+                SELECT * FROM market_snapshots 
+                WHERE collected_at >= ${startDate.toISOString()}
+                ORDER BY collected_at ASC
+            `;
+
+            this.logger.info(`Retrieved ${data.length} historical records for ${days} days`);
+            return data;
+
+        } catch (error) {
+            this.logger.error('Failed to get historical data', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get active portfolio
      * @returns {Promise<Object|null>} Active portfolio or null
      */
@@ -105,6 +131,28 @@ export class DatabaseService {
 
         } catch (error) {
             this.logger.error('Failed to get active portfolio', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get recent trades
+     * @param {number} limit - Number of trades to fetch
+     * @returns {Promise<Array>} Recent trades
+     */
+    async getRecentTrades(limit = 10) {
+        try {
+            const data = await this.sql`
+                SELECT * FROM trades 
+                ORDER BY executed_at DESC 
+                LIMIT ${limit}
+            `;
+
+            this.logger.debug(`Retrieved ${data.length} recent trades`);
+            return data;
+
+        } catch (error) {
+            this.logger.error('Failed to get recent trades', error);
             throw error;
         }
     }
@@ -310,35 +358,4 @@ export class DatabaseService {
         }
     }
 
-    /**
-     * Get recent trades
-     * @param {number} limit - Number of trades to return
-     * @returns {Promise<Array>} Recent trades
-     */
-    async getRecentTrades(limit = 10) {
-        try {
-            const result = await this.sql`
-                SELECT 
-                    id,
-                    date,
-                    type,
-                    action,
-                    eth_amount,
-                    btc_amount,
-                    reason,
-                    status,
-                    created_at
-                FROM trades 
-                ORDER BY created_at DESC 
-                LIMIT ${limit}
-            `;
-
-            this.logger.debug(`Retrieved ${result.length} recent trades`);
-            return result;
-
-        } catch (error) {
-            this.logger.error('Failed to get recent trades', error);
-            throw error;
-        }
-    }
 }

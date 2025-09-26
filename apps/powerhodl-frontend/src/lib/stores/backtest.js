@@ -192,7 +192,7 @@ export async function runSingleBacktest(parameters) {
 					lookbackWindow: parameters.lookbackWindow,
 					volatilityFilter: parameters.volatilityFilter
 				},
-				useRealData: true,
+				useRealData: parameters.useRealData !== false, // Use parameter or default to true
 				backtestPeriod: parameters.backtestPeriod || 'ALL'
 			})
 		});

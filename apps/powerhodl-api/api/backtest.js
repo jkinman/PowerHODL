@@ -102,9 +102,11 @@ async function runBacktest(params, useRealData = true, period = 'ALL') {
     
     // Fetch market data
     let data;
+    let actualDataSource = 'unknown';
+    
     try {
         if (useRealData) {
-            console.log('📊 [BACKTEST] Fetching real market data from database...');
+            console.log('🔴 [BACKTEST] USING REAL MARKET DATA from database...');
             const dbService = new DatabaseService();
             data = await dbService.getHistoricalData();
             
@@ -112,15 +114,21 @@ async function runBacktest(params, useRealData = true, period = 'ALL') {
                 throw new Error('No historical data found in database');
             }
             
-            console.log(`📈 [BACKTEST] Retrieved ${data.length} data points from database`);
+            actualDataSource = 'database';
+            console.log(`✅ [BACKTEST] SUCCESS: Retrieved ${data.length} REAL data points from database`);
         } else {
-            throw new Error('Using cached data');
+            console.log('📥 [BACKTEST] User requested cached/simulated data, skipping database...');
+            throw new Error('Using cached data as requested');
         }
     } catch (error) {
-        console.log('📥 [BACKTEST] Database unavailable, using cached data...');
+        if (useRealData) {
+            console.warn('⚠️ [BACKTEST] Real data requested but database unavailable:', error.message);
+        }
+        console.log('📦 [BACKTEST] Falling back to cached historical data...');
         const collector = new ETHBTCDataCollector();
         data = await collector.loadData('eth_btc_data_2025-09-24.json');
-        console.log(`📈 [BACKTEST] Loaded ${data.length} data points from cache`);
+        actualDataSource = 'cached';
+        console.log(`📈 [BACKTEST] Loaded ${data.length} data points from cache file`);
     }
     
     // Validate data
@@ -199,7 +207,8 @@ async function runBacktest(params, useRealData = true, period = 'ALL') {
             backtestEngine: 'ETHBTCAnalyzer',
             version: '2.0.0',
             period: period,
-            useRealData: useRealData
+            useRealData: useRealData,
+            actualDataSource: actualDataSource // Track what data was actually used
         }
     };
     

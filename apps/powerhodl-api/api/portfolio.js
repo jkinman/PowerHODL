@@ -6,6 +6,7 @@
 
 import { DatabaseService } from '../lib/services/DatabaseService.js';
 import MegaOptimalStrategy from '../src/strategy.js';
+import { ethers } from 'ethers';
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -30,14 +31,66 @@ export default async function handler(req, res) {
         // Initialize database service
         const dbService = new DatabaseService();
         
-        // Get current portfolio state (mock for now)
-        const currentPortfolio = {
-            totalValueBTC: 0.485,
-            btcAmount: 0.285,
-            ethAmount: 5.714,
-            ethValueBTC: 0.200,
-            lastUpdated: new Date().toISOString()
-        };
+        // Get current portfolio state from REAL wallet/exchange (PRIMARY SOURCE)
+        let currentPortfolio;
+        let portfolioSource = 'unknown';
+        
+        try {
+            // PRIMARY: Get real wallet balances directly from wallet/exchange
+                const { TradeExecutionService } = await import('../lib/services/TradeExecutionService.js');
+                const { ModernMetaMaskService } = await import('../lib/services/ModernMetaMaskService.js');
+                
+                const tradingMode = process.env.TRADING_MODE || 'simulation';
+                let walletBalances;
+                
+                if (tradingMode === 'metamask') {
+                    const metaMaskService = new ModernMetaMaskService();
+                    walletBalances = await metaMaskService.getWalletBalances();
+                    portfolioSource = 'metamask';
+                } else {
+                    const tradeService = new TradeExecutionService();
+                    walletBalances = await tradeService.getAccountBalance();
+                    portfolioSource = 'exchange';
+                }
+                
+                // Convert wallet balances to portfolio format
+                const ethAmount = tradingMode === 'metamask' 
+                    ? parseFloat(ethers.formatEther(walletBalances.ETH || 0))
+                    : walletBalances.ETH?.total || 0;
+                const btcAmount = tradingMode === 'metamask'
+                    ? parseFloat(ethers.formatUnits(walletBalances.WBTC || 0, 8))
+                    : walletBalances.BTC?.total || 0;
+                    
+                // Get current market data for conversion
+                const { MarketDataService } = await import('../lib/services/MarketDataService.js');
+                const marketService = new MarketDataService();
+                let ethBtcRatio = 0.037; // Fallback ratio
+                
+                try {
+                    const marketData = await marketService.getCurrentMarketData();
+                    ethBtcRatio = marketData.ethBtcRatio;
+                } catch (marketError) {
+                    console.warn('Could not fetch current market data, using fallback ratio');
+                }
+                
+                const ethValueBTC = ethAmount * ethBtcRatio;
+                
+                currentPortfolio = {
+                    totalValueBTC: btcAmount + ethValueBTC,
+                    btcAmount: btcAmount,
+                    ethAmount: ethAmount,
+                    ethValueBTC: ethValueBTC,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                console.log(`✅ [PORTFOLIO API] Using real wallet balances from ${portfolioSource}`);
+        } catch (walletError) {
+            console.error('❌ [PORTFOLIO API] Could not access real wallet:', walletError.message);
+            
+            // NO DATABASE FALLBACK - Portfolio balances should ONLY come from wallet
+            // Database is for trade history, not current balances
+            throw new Error(`Unable to fetch real portfolio balances from wallet: ${walletError.message}`);
+        }
         
         // Get recent trades
         let recentTrades = [];
@@ -95,7 +148,8 @@ export default async function handler(req, res) {
             metadata: {
                 executionTime,
                 version: '2.0.0',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                portfolioSource: portfolioSource // Track where portfolio data came from
             },
             warnings: tradesError ? [`Unable to fetch trade history: ${tradesError}`] : []
         };

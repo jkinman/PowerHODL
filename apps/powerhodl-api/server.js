@@ -16,8 +16,10 @@ import backtestHandler from './api/backtest.js';
 import portfolioHandler from './api/portfolio.js';
 import historicalHandler from './api/historical.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from multiple locations
+dotenv.config(); // Load from current directory
+dotenv.config({ path: '../../.env' }); // Load from project root
+dotenv.config({ path: '../../.env.local' }); // Load from project root .env.local
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

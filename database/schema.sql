@@ -115,7 +115,6 @@ CREATE INDEX IF NOT EXISTS idx_system_events_created_at ON system_events(created
 CREATE INDEX IF NOT EXISTS idx_system_events_event_type ON system_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_performance_snapshots_created_at ON performance_snapshots(created_at);
 
--- Insert initial portfolio if not exists
-INSERT INTO portfolios (eth_amount, btc_amount, total_value_btc, initial_value_btc, is_active)
-SELECT 0.5, 0.5, 1.0, 1.0, true
-WHERE NOT EXISTS (SELECT 1 FROM portfolios WHERE is_active = true);
+-- NOTE: No initial portfolio data inserted
+-- Portfolio balances should come from real wallet/exchange, not database
+-- Database is only for storing trade history, market data, and signals
