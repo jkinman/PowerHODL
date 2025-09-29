@@ -4,13 +4,70 @@
 	Top navigation bar with branding, status indicators, and quick actions
 -->
 <script>
-	import { currentPage, notifications, notificationSummary, marketHealth } from '$lib/stores';
-	import { navigateTo, clearNotifications } from '$lib/stores';
+	import { currentPage, notifications, notificationSummary, marketHealth, showInfo, showSuccess } from '$lib/stores';
+	import { navigateTo, clearNotifications, updateMarketData } from '$lib/stores';
 	
 	// Reactive data
 	$: hasNotifications = $notificationSummary.unread > 0;
 	$: isMarketHealthy = $marketHealth.isHealthy;
 	$: dataAge = $marketHealth.dataAgeFormatted;
+	
+	import { onMount, onDestroy } from 'svelte';
+	
+	let systemStatus = null;
+	let statusInterval;
+	
+	// Refresh market data
+	async function refreshMarketData() {
+		showInfo('Refreshing', 'Fetching latest market data...');
+		
+		try {
+			// Fetch both market data and system status
+			const [marketResponse, statusResponse] = await Promise.all([
+				fetch(`${import.meta.env.DEV ? 'http://localhost:9001' : (import.meta.env.VITE_API_URL || 'https://powerhodl-api.vercel.app')}/api/historical?timeframe=1m`),
+				fetch(`${import.meta.env.DEV ? 'http://localhost:9001' : (import.meta.env.VITE_API_URL || 'https://powerhodl-api.vercel.app')}/api/system-status`)
+			]);
+			
+			if (marketResponse.ok) {
+				const data = await marketResponse.json();
+				if (data.data && data.data.length > 0) {
+					const latestData = data.data[data.data.length - 1];
+					updateMarketData({
+						ethPriceUSD: latestData.eth_price_usd || latestData.ethPriceUSD,
+						btcPriceUSD: latestData.btc_price_usd || latestData.btcPriceUSD,
+						ethBtcRatio: latestData.eth_btc_ratio || latestData.ethBtcRatio,
+						zScore: latestData.z_score || latestData.zScore || 0,
+						source: 'database',
+						lastUpdate: latestData.collected_at || new Date().toISOString()
+					});
+				}
+			}
+			
+			if (statusResponse.ok) {
+				const statusData = await statusResponse.json();
+				systemStatus = statusData.data;
+			}
+			
+			showSuccess('Data Updated', 'Market data and system status refreshed');
+		} catch (error) {
+			console.error('Failed to refresh data:', error);
+			showInfo('Refresh Failed', 'Could not fetch latest data');
+		}
+	}
+	
+	// Check system status periodically
+	onMount(() => {
+		refreshMarketData(); // Initial load
+		
+		// Check status every 2 minutes
+		statusInterval = setInterval(refreshMarketData, 120000);
+	});
+	
+	onDestroy(() => {
+		if (statusInterval) {
+			clearInterval(statusInterval);
+		}
+	});
 </script>
 
 <header class="powerhodl-header">
@@ -38,6 +95,16 @@
 						<span class="status-age">({dataAge})</span>
 					{/if}
 				</div>
+				<button 
+					class="refresh-btn" 
+					on:click={refreshMarketData}
+					title="Refresh market data"
+				>
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M3 12a9 9 0 1 1 0 6"></path>
+						<polyline points="3 15 3 9 9 9"></polyline>
+					</svg>
+				</button>
 			</div>
 
 			<!-- Notifications -->
@@ -47,7 +114,10 @@
 					on:click={() => {/* Will implement notification panel */}}
 					title="Notifications"
 				>
-					<span class="notification-icon">🔔</span>
+					<svg class="notification-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+						<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+					</svg>
 					{#if hasNotifications}
 						<span class="notification-badge">{$notificationSummary.unread}</span>
 					{/if}
@@ -198,6 +268,38 @@
 		font-size: 10px;
 		color: #666;
 	}
+	
+	.refresh-btn {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		padding: 6px;
+		margin-left: 8px;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #888;
+	}
+	
+	.refresh-btn:hover {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.2);
+		color: #fff;
+	}
+	
+	.refresh-btn:active {
+		transform: scale(0.95);
+	}
+	
+	.refresh-btn svg {
+		transition: transform 0.3s ease;
+	}
+	
+	.refresh-btn:hover svg {
+		transform: rotate(180deg);
+	}
 
 	/* Notifications */
 	.notifications {
@@ -221,7 +323,8 @@
 	}
 
 	.notification-icon {
-		font-size: 18px;
+		width: 18px;
+		height: 18px;
 		color: #888;
 		transition: color 0.2s ease;
 	}

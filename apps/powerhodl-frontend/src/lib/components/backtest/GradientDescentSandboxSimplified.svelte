@@ -8,6 +8,7 @@
 	import { 
 		backtestState,
 		backtestResults,
+		selectedBacktestResult,
 		optimizationState,
 		optimizationResults,
 		runSingleBacktest,
@@ -18,7 +19,10 @@
 	} from '$lib/stores';
 	import { BaseChart } from '../charts';
 	import ParameterLandscape3D from '../visualization/ParameterLandscape3D.svelte';
-	import TradeSignalsAccordion from './TradeSignalsAccordion.svelte';
+	import ParameterConfiguration from './ParameterConfiguration.svelte';
+	import BacktestResultsTable from './BacktestResultsTable.svelte';
+	import BacktestResultChart from './BacktestResultChart.svelte';
+	import BacktestResultDetails from './BacktestResultDetails.svelte';
 	import { generateChartData, parseTimestamp } from '$lib/utils/chartUtils.js';
 	
 	// API URL constant for environment-specific endpoints
@@ -32,7 +36,8 @@
 		transactionCost: 1.66,
 		zScoreThreshold: 1.258,
 		lookbackWindow: 15,
-		volatilityFilter: 0.5000
+		volatilityFilter: 0.5000,
+		tradeFrequencyMinutes: 120 // 2 hours default
 	};
 	
 	// Optimization settings
@@ -47,6 +52,14 @@
 		backtestPeriod: 'ALL',
 		dataSource: 'database' // 'database', 'cached', 'simulated'
 	};
+	
+	// Handle parameter updates from components
+	function handleParameterUpdate(event) {
+		const { parameters: newParams, dataSource: newDataSource, backtestPeriod: newPeriod } = event.detail;
+		if (newParams) parameters = newParams;
+		if (newDataSource !== undefined) dataSettings.dataSource = newDataSource;
+		if (newPeriod !== undefined) dataSettings.backtestPeriod = newPeriod;
+	}
 	
 	// Available data periods
 	const dataPeriods = [
@@ -91,8 +104,6 @@
 	// Chart data
 	let backtestChartData = null;
 	
-	// Expanded row state for trade signals
-	let expandedResultIndex = null;
 	
 	// Preset configurations
 	const presets = [
@@ -126,6 +137,8 @@
 			console.log('🚀 Running backtest with real data:', backtestParams.useRealData);
 			
 			await runSingleBacktest(backtestParams);
+			
+			// Update chart asynchronously without blocking
 			updateBacktestChart();
 			showSuccess('Backtest Complete', `Strategy tested on ${dataSettings.backtestPeriod === 'ALL' ? 'all available' : dataSettings.backtestPeriod + ' days of'} ${dataSettings.dataSource} data`);
 		} catch (error) {
@@ -164,11 +177,14 @@
 	}
 	
 	// Update backtest chart with results using unified chart utilities
-	function updateBacktestChart() {
+	async function updateBacktestChart() {
 		if (!$backtestResults || !$backtestResults.length) return;
 		
 		const result = $backtestResults[0]; // Latest result
 		if (!result.portfolioHistory || !result.portfolioHistory.length) return;
+		
+		// Yield to UI thread before processing
+		await new Promise(resolve => setTimeout(resolve, 10));
 		
 		// Use unified chart data generation
 		const chartInfo = generateChartData(result.portfolioHistory, 'backtest');
@@ -177,11 +193,22 @@
 		const holdingValues = [];
 		const initialBTCValue = result.portfolioHistory[0]?.totalValueBTC || 0.5;
 		
-		result.portfolioHistory.forEach((point) => {
-			portfolioValues.push(point.totalValueBTC || 0);
-			// Hold strategy = straight line (no trades, just hold initial BTC allocation)
-			holdingValues.push(initialBTCValue); // Constant - no growth from trading
-		});
+		// Process data in chunks to avoid blocking UI
+		const chunkSize = 1000;
+		for (let i = 0; i < result.portfolioHistory.length; i += chunkSize) {
+			const chunk = result.portfolioHistory.slice(i, i + chunkSize);
+			
+			chunk.forEach((point) => {
+				portfolioValues.push(point.totalValueBTC || 0);
+				// Hold strategy = straight line (no trades, just hold initial BTC allocation)
+				holdingValues.push(initialBTCValue); // Constant - no growth from trading
+			});
+			
+			// Yield to UI thread after each chunk
+			if (i + chunkSize < result.portfolioHistory.length) {
+				await new Promise(resolve => setTimeout(resolve, 5));
+			}
+		}
 		
 		backtestChartData = {
 			labels: chartInfo.labels,
@@ -226,7 +253,58 @@
 	
 	// React to backtest results changes
 	$: if ($backtestResults && $backtestResults.length > 0) {
+		// Run async without blocking
 		updateBacktestChart();
+	}
+	
+	// Function to apply parameters from a result
+	function applyParameters(result) {
+		if (result && result.parameters) {
+			parameters = { ...result.parameters };
+			showSuccess('Parameters Applied', 'The selected parameters have been applied to the form');
+		}
+	}
+	
+	// Function to save parameters to database
+	async function saveParameters(result) {
+		if (!result || !result.parameters) return;
+		
+		const name = prompt('Enter a name for these parameters:', 
+			`Optimal ${new Date().toLocaleDateString()} - ${result.btcGrowthPercent.toFixed(2)}% BTC`);
+		
+		if (!name) return;
+		
+		const description = prompt('Enter a description (optional):', 
+			`Z-Score: ${result.parameters.zScoreThreshold}, Rebalance: ${result.parameters.rebalancePercent}%, Trade Freq: ${result.parameters.tradeFrequencyMinutes || 720}min`);
+		
+		try {
+			const response = await fetch(`${__API_URL__}/api/parameters`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					parameters: result.parameters,
+					performance: {
+						btcGrowthPercent: result.btcGrowthPercent,
+						tokenAccumulationPercent: result.tokenAccumulationPercent,
+						totalTrades: result.totalTrades,
+						sharpeRatio: result.sharpeRatio,
+						maxDrawdown: result.maxDrawdown,
+						winRate: result.winRate
+					},
+					name,
+					description: description || ''
+				})
+			});
+			
+			if (response.ok) {
+				showSuccess('Parameters Saved', `Successfully saved "${name}" to database`);
+			} else {
+				const error = await response.json();
+				showError('Save Failed', error.error || 'Failed to save parameters');
+			}
+		} catch (error) {
+			showError('Save Failed', error.message);
+		}
 	}
 	
 	// Calculate best optimization result
@@ -283,133 +361,136 @@
 			<!-- Left: Parameters & Controls -->
 			<div class="parameters-section">
 				
-				<!-- Quick Presets -->
-				<div class="presets-card">
-					<h4 class="card-title">Quick Start Presets</h4>
-					<div class="presets-grid">
-						{#each presets as preset}
-							<button 
-								class="preset-button"
-								on:click={() => applyPreset(preset)}
-								title={preset.description}
-							>
-								<div class="preset-name">{preset.name}</div>
-								<div class="preset-desc">{preset.description}</div>
-							</button>
-						{/each}
-					</div>
-				</div>
-				
-				<!-- Parameter Controls -->
-				<div class="parameters-card">
-					<h4 class="card-title">Trading Parameters</h4>
-					
-					<div class="param-grid">
-						<div class="param-item">
-							<label class="param-label">Rebalance Threshold</label>
-							<div class="param-input-group">
-								<input 
-									type="number" 
-									bind:value={parameters.rebalancePercent}
-									min="20" 
-									max="80" 
-									step="0.1"
-									class="param-input"
-								/>
-								<span class="param-unit">%</span>
-							</div>
-						</div>
-						
-						<div class="param-item">
-							<label class="param-label">Z-Score Threshold</label>
-							<div class="param-input-group">
-								<input 
-									type="number" 
-									bind:value={parameters.zScoreThreshold}
-									min="0.5" 
-									max="3.0" 
-									step="0.001"
-									class="param-input"
-								/>
-							</div>
-						</div>
-						
-						<div class="param-item">
-							<label class="param-label">Transaction Cost</label>
-							<div class="param-input-group">
-								<input 
-									type="number" 
-									bind:value={parameters.transactionCost}
-									min="0.1" 
-									max="5.0" 
-									step="0.01"
-									class="param-input"
-								/>
-								<span class="param-unit">%</span>
-							</div>
-						</div>
-						
-						<div class="param-item">
-							<label class="param-label">Lookback Window</label>
-							<div class="param-input-group">
-								<input 
-									type="number" 
-									bind:value={parameters.lookbackWindow}
-									min="5" 
-									max="30" 
-									step="1"
-									class="param-input"
-								/>
-								<span class="param-unit">days</span>
-							</div>
-						</div>
-						
-						<div class="param-item">
-							<label class="param-label">Volatility Filter</label>
-							<div class="param-input-group">
-								<input 
-									type="number" 
-									bind:value={parameters.volatilityFilter}
-									min="0.1" 
-									max="1.0" 
-									step="0.1"
-									class="param-input"
-								/>
-							</div>
+				<!-- Combined Configuration Card -->
+				<div class="config-card">
+					<div class="config-header">
+						<h4 class="card-title">Test Configuration</h4>
+						<div class="preset-tabs">
+							{#each presets as preset}
+								<button 
+									class="preset-tab"
+									class:active={false}
+									on:click={() => applyPreset(preset)}
+									title={preset.description}
+								>
+									{preset.name}
+								</button>
+							{/each}
 						</div>
 					</div>
-				</div>
-				
-				<!-- Data Selection -->
-				<div class="data-card">
-					<h4 class="card-title">📊 Data Selection</h4>
 					
-					<div class="data-controls">
-						<!-- Data Source -->
-						<div class="control-group">
-							<label class="control-label">Data Source:</label>
-							<div class="data-source-selector">
-								{#each dataSources as source}
-									<label class="radio-control">
+					<div class="config-content">
+						<!-- Parameters Section -->
+						<div class="params-section">
+							<h5 class="section-subtitle">Trading Parameters</h5>
+							<div class="param-grid">
+								<div class="param-row">
+									<label class="param-label">Rebalance</label>
+									<div class="param-input-wrapper">
 										<input 
-											type="radio" 
-											bind:group={dataSettings.dataSource} 
-											value={source.value}
-											disabled={!source.available}
+											type="number" 
+											bind:value={parameters.rebalancePercent}
+											min="20" 
+											max="80" 
+											step="0.1"
+											class="param-input"
 										/>
-										<span class="radio-text">
-											<span class="source-label">{source.label}</span>
-											<span class="source-desc">{source.description}</span>
-										</span>
-									</label>
-								{/each}
+										<span class="param-unit">%</span>
+									</div>
+								</div>
+								
+								<div class="param-row">
+									<label class="param-label">Z-Score</label>
+									<div class="param-input-wrapper">
+										<input 
+											type="number" 
+											bind:value={parameters.zScoreThreshold}
+											min="0.5" 
+											max="3.0" 
+											step="0.001"
+											class="param-input"
+										/>
+										<span class="param-unit"></span>
+									</div>
+								</div>
+								
+								<div class="param-row">
+									<label class="param-label">Cost</label>
+									<div class="param-input-wrapper">
+										<input 
+											type="number" 
+											bind:value={parameters.transactionCost}
+											min="0.1" 
+											max="5.0" 
+											step="0.01"
+											class="param-input"
+										/>
+										<span class="param-unit">%</span>
+									</div>
+								</div>
+								
+								<div class="param-row">
+									<label class="param-label">Lookback</label>
+									<div class="param-input-wrapper">
+										<input 
+											type="number" 
+											bind:value={parameters.lookbackWindow}
+											min="5" 
+											max="30" 
+											step="1"
+											class="param-input"
+										/>
+										<span class="param-unit">days</span>
+									</div>
+								</div>
+								
+								<div class="param-row">
+									<label class="param-label">Volatility</label>
+									<div class="param-input-wrapper">
+										<input 
+											type="number" 
+											bind:value={parameters.volatilityFilter}
+											min="0.1" 
+											max="1.0" 
+											step="0.1"
+											class="param-input"
+										/>
+										<span class="param-unit"></span>
+									</div>
+								</div>
+								
+								<div class="param-row">
+									<label class="param-label">Frequency</label>
+									<div class="param-input-wrapper">
+										<input 
+											type="number" 
+											bind:value={parameters.tradeFrequencyMinutes}
+											min="60"
+											max="1440" 
+											step="60"
+											class="param-input"
+										/>
+										<span class="param-unit">min</span>
+									</div>
+								</div>
 							</div>
 						</div>
 						
-						<!-- Time Period -->
-						<div class="control-group">
-							<label class="control-label">Backtest Period:</label>
-							<div class="period-selector">
+						<!-- Data Selection Section -->
+						<div class="data-section">
+							<h5 class="section-subtitle">Data Selection</h5>
+							
+							<div class="data-source-compact">
+								<select bind:value={dataSettings.dataSource} class="data-source-select">
+									{#each dataSources as source}
+										<option value={source.value} disabled={!source.available}>
+											{source.label} - {source.description}
+										</option>
+									{/each}
+								</select>
+							</div>
+							
+							<div class="period-buttons">
 								{#each dataPeriods as period}
 									<button 
 										class="period-btn"
@@ -417,22 +498,9 @@
 										on:click={() => dataSettings.backtestPeriod = period.value}
 										title={period.description}
 									>
-										<span class="period-label">{period.label}</span>
+										{period.label}
 									</button>
 								{/each}
-							</div>
-						</div>
-						
-						<!-- Data Summary -->
-						<div class="data-summary">
-							<div class="summary-item">
-								<span class="summary-label">Testing on:</span>
-								<span class="summary-value">
-									{dataSettings.backtestPeriod === 'ALL' ? 'All available data' : `${dataSettings.backtestPeriod} days`}
-									{#if dataSettings.dataSource === 'database'}(Real market data){/if}
-									{#if dataSettings.dataSource === 'cached'}(Cached historical){/if}
-									{#if dataSettings.dataSource === 'simulated'}(Simulated data){/if}
-								</span>
 							</div>
 						</div>
 					</div>
@@ -633,7 +701,14 @@
 							</thead>
 							<tbody>
 								{#each $backtestResults as result, index}
-									<tr class="result-row" class:latest={index === 0}>
+									<tr 
+										class="result-row clickable" 
+										class:latest={index === 0}
+										class:selected={$selectedBacktestResult === result}
+										on:click={() => {
+											selectedBacktestResult.set(result);
+										}}
+									>
 										<td class="timestamp-cell">
 											{new Date(result.timestamp).toLocaleString([], { 
 												month: 'short', 
@@ -668,10 +743,7 @@
 										<td class="actions-cell">
 											<button 
 												class="mini-btn apply"
-												on:click={() => {
-													parameters = { ...result.parameters };
-													showSuccess('Parameters Applied', 'Configuration loaded from test result');
-												}}
+												on:click={() => applyParameters(result)}
 												title="Apply these parameters"
 											>
 												Apply
@@ -679,24 +751,24 @@
 											<button 
 												class="mini-btn view"
 												on:click={() => {
-													expandedResultIndex = expandedResultIndex === index ? null : index;
+													selectedBacktestResult.set(result); // Set the selected result
 												}}
 												title="View trade signals"
 											>
-												{expandedResultIndex === index ? 'Hide' : 'View'}
+												View
 											</button>
+											
+											{#if result.btcGrowthPercent > 0}
+												<button 
+													class="mini-btn save"
+													on:click={() => saveParameters(result)}
+													title="Save these parameters"
+												>
+													💾 Save
+												</button>
+											{/if}
 										</td>
 									</tr>
-									{#if expandedResultIndex === index && result.trades}
-										<tr>
-											<td colspan="7" class="accordion-cell">
-												<TradeSignalsAccordion 
-													trades={result.trades || []}
-													isExpanded={true}
-												/>
-											</td>
-										</tr>
-									{/if}
 								{/each}
 							</tbody>
 						</table>
@@ -726,6 +798,9 @@
 				/>
 			</div>
 		</div>
+		
+		<!-- Selected Result Details -->
+		<BacktestResultDetails />
 	</div>
 </div>
 
@@ -768,6 +843,185 @@
 		color: #888;
 		margin: 0;
 	}
+	
+	/* Combined Configuration Card */
+	.config-card {
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 12px;
+		overflow: hidden;
+		margin-bottom: 16px;
+	}
+	
+	.config-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px;
+		background: rgba(0, 0, 0, 0.2);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	
+	.preset-tabs {
+		display: flex;
+		gap: 4px;
+	}
+	
+	.preset-tab {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 6px;
+		padding: 6px 12px;
+		font-size: 12px;
+		color: #999;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+	
+	.preset-tab:hover {
+		background: rgba(255, 255, 255, 0.1);
+		color: #fff;
+	}
+	
+	.preset-tab.active {
+		background: rgba(247, 147, 26, 0.2);
+		border-color: rgba(247, 147, 26, 0.4);
+		color: #f7931a;
+	}
+	
+	.config-content {
+		padding: 12px 16px 16px 16px;
+	}
+	
+	.section-subtitle {
+		font-size: 13px;
+		font-weight: 600;
+		color: #888;
+		margin: 0 0 12px 0;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+	
+	/* Parameters Section */
+	.params-section {
+		margin-bottom: 20px;
+		width: 100%;
+	}
+	
+	.param-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 12px 16px;
+		width: 100%;
+	}
+	
+	.param-row {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
+	}
+	
+	.param-label {
+		font-size: 11px;
+		color: #999;
+		font-weight: 500;
+		flex: 0 0 auto;
+		min-width: 60px;
+		text-align: left;
+	}
+	
+	.param-input-wrapper {
+		display: flex;
+		align-items: center;
+		flex: 1;
+		justify-content: flex-end;
+		min-width: 0;
+	}
+	
+	.param-input {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 4px;
+		padding: 4px 6px;
+		color: #fff;
+		font-size: 12px;
+		width: 60px;
+		text-align: right;
+		flex-shrink: 0;
+	}
+	
+	.param-input:focus {
+		outline: none;
+		border-color: rgba(247, 147, 26, 0.5);
+		background: rgba(255, 255, 255, 0.08);
+	}
+	
+	.param-unit {
+		font-size: 10px;
+		color: #666;
+		margin-left: 4px;
+		width: 20px;
+		flex-shrink: 0;
+		text-align: left;
+	}
+	
+	/* Data Section */
+	.data-section {
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+		padding-top: 16px;
+	}
+	
+	.data-source-select {
+		width: 100%;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 6px;
+		padding: 8px 12px;
+		color: #fff;
+		font-size: 13px;
+		margin-bottom: 12px;
+		cursor: pointer;
+	}
+	
+	.data-source-select:focus {
+		outline: none;
+		border-color: rgba(247, 147, 26, 0.5);
+	}
+	
+	.data-source-select option {
+		background: #1a1a1a;
+		color: #fff;
+	}
+	
+	.period-buttons {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+	
+	.period-btn {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 6px;
+		padding: 8px 12px;
+		font-size: 12px;
+		color: #999;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		white-space: nowrap;
+	}
+	
+	.period-btn:hover {
+		background: rgba(255, 255, 255, 0.08);
+		color: #fff;
+	}
+	
+	.period-btn.active {
+		background: rgba(247, 147, 26, 0.2);
+		border-color: rgba(247, 147, 26, 0.4);
+		color: #f7931a;
+	}
 
 	/* Main Grid */
 	.sandbox-grid {
@@ -780,8 +1034,13 @@
 	/* Top Row: Parameters & Current Results */
 	.top-row {
 		display: grid;
-		grid-template-columns: 400px 1fr;
+		grid-template-columns: minmax(380px, 420px) 1fr;
 		gap: 24px;
+	}
+	
+	.parameters-section {
+		min-width: 0;
+		overflow: visible;
 	}
 	
 	/* Results History Section */
@@ -1286,6 +1545,15 @@
 		background: rgba(247, 147, 26, 0.05);
 		border-left: 3px solid #f7931a;
 	}
+	
+	.result-row.clickable {
+		cursor: pointer;
+	}
+	
+	.result-row.selected {
+		background: rgba(247, 147, 26, 0.15) !important;
+		border-left: 3px solid #f7931a;
+	}
 
 	.growth-value.positive {
 		color: #4ade80;
@@ -1348,6 +1616,17 @@
 
 	.mini-btn.view:hover {
 		background: rgba(59, 130, 246, 0.2);
+	}
+	
+	.mini-btn.save {
+		background: rgba(92, 184, 92, 0.1);
+		border-color: rgba(92, 184, 92, 0.3);
+		color: #5cb85c;
+		margin-left: 0.5rem;
+	}
+
+	.mini-btn.save:hover {
+		background: rgba(92, 184, 92, 0.2);
 	}
 	
 	/* Accordion Cell */

@@ -31,7 +31,7 @@
 		surfaceOpacity: 0.9,
 		colorScale: 'Portland',
 		showContours: true,
-		cameraAngle: { x: -30, y: 45, z: 0 },
+		cameraAngle: { x: 20, y: 35, z: 0 }, // Better starting angle
 		lightingIntensity: 0.8,
 		meshSmoothing: true
 	};
@@ -108,14 +108,17 @@
 					
 					// Interpolate from nearby cached results
 					const btcGrowth = interpolateFromCache(params, xParam, yParam, cachedResults);
-					row.push(btcGrowth);
+					// Ensure no NaN or undefined values
+					row.push(isNaN(btcGrowth) || btcGrowth === undefined || btcGrowth === null ? 0 : btcGrowth);
 				}
 				zValues.push(row);
 			}
 		} else {
-			// Fall back to mathematical simulation if not enough cache
-			console.log('Using mathematical simulation (not enough cached results)');
+			// Not enough real data - prompt user to run more backtests
+			console.log('Not enough backtest results for accurate surface. Run more tests in the Gradient Descent Sandbox.');
+			showInfo('More Data Needed', 'Run at least 10 backtests in the Gradient Descent Sandbox to see an accurate surface');
 			
+			// Use simulation as fallback
 			for (let j = 0; j <= ySteps; j++) {
 				const row = [];
 				for (let i = 0; i <= xSteps; i++) {
@@ -125,7 +128,8 @@
 					
 					// Use enhanced simulation based on strategy knowledge
 					const btcGrowth = simulateBTCGrowthEnhanced(params);
-					row.push(btcGrowth);
+					// Ensure no NaN or undefined values
+					row.push(isNaN(btcGrowth) || btcGrowth === undefined || btcGrowth === null ? 0 : btcGrowth);
 				}
 				zValues.push(row);
 				surfaceGenerationProgress = (j / ySteps) * 100;
@@ -133,7 +137,13 @@
 		}
 		
 		isGeneratingSurface = false;
-		const surfaceData = { x: xValues, y: yValues, z: zValues };
+		
+		// Final cleanup to ensure no NaN or undefined values in the surface
+		const cleanZValues = zValues.map(row => 
+			row.map(val => isNaN(val) || val === undefined || val === null ? 0 : val)
+		);
+		
+		const surfaceData = { x: xValues, y: yValues, z: cleanZValues };
 		surfaceDataCache.set(cacheKey, surfaceData);
 		return surfaceData;
 	}
@@ -202,7 +212,10 @@
 		const variance = (Math.random() - 0.5) * 2;
 		
 		// Cap between realistic bounds seen in actual backtests
-		return Math.max(-15, Math.min(10, performance + variance));
+		const result = Math.max(-15, Math.min(10, performance + variance));
+		
+		// Ensure we never return NaN or undefined
+		return isNaN(result) || result === undefined || result === null ? 0 : result;
 	}
 	
 	// Generate optimization trail from results
@@ -237,12 +250,33 @@
 		if (!plotlyReady || !plotContainer) return;
 		
 		try {
-			// Populate cache from existing backtest results
+			// Always populate cache from existing backtest results
 			if ($backtestResults && $backtestResults.length > 0) {
+				backtestResultsCache.clear(); // Clear old cache
 				$backtestResults.forEach(result => {
-					const key = `${result.parameters?.rebalanceThreshold || result.parameters?.rebalancePercent}_${result.parameters?.zScoreThreshold}`;
-					backtestResultsCache.set(key, result);
+					if (result && result.parameters) {
+						const rebalanceValue = result.parameters.rebalancePercent || result.parameters.rebalanceThreshold || 50;
+						const zScoreValue = result.parameters.zScoreThreshold || 1.5;
+						
+						// Create multiple cache keys for better matching
+						const key1 = `${rebalanceValue}_${zScoreValue}`;
+						const key2 = `${Math.round(rebalanceValue)}_${zScoreValue}`;
+						
+						const cacheEntry = {
+							parameters: {
+								rebalanceThreshold: rebalanceValue,
+								rebalancePercent: rebalanceValue,
+								zScoreThreshold: zScoreValue,
+								...result.parameters
+							},
+							btcGrowthPercent: result.btcGrowthPercent || 0
+						};
+						
+						backtestResultsCache.set(key1, cacheEntry);
+						backtestResultsCache.set(key2, cacheEntry);
+					}
 				});
+				console.log(`Auto-populated cache with ${backtestResultsCache.size} entries from ${$backtestResults.length} backtest results`);
 			}
 			
 			const surfaceData = await generateParameterSurface();
@@ -346,9 +380,14 @@
 					},
 					camera: {
 						eye: {
-							x: Math.cos(visualSettings.cameraAngle.y * Math.PI / 180) * 2,
-							y: Math.sin(visualSettings.cameraAngle.y * Math.PI / 180) * 2,
-							z: Math.sin(visualSettings.cameraAngle.x * Math.PI / 180) * 2
+							x: 1.5,
+							y: -1.5,
+							z: 1.2
+						},
+						center: {
+							x: 0,
+							y: 0,
+							z: 0
 						}
 					},
 					bgcolor: 'rgba(0,0,0,0)',
@@ -373,6 +412,7 @@
 			const config = {
 				responsive: true,
 				displayModeBar: interactive,
+				scrollZoom: false, // Disable scroll wheel zoom
 				modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
 				modeBarButtonsToAdd: [{
 					name: 'Reset Camera',
@@ -447,6 +487,56 @@
 		});
 	}
 	
+	// Refresh surface from existing backtest results
+	async function refreshFromBacktestResults() {
+		if ($backtestResults.length === 0) {
+			showInfo('No Results', 'Run some backtests in the Gradient Descent Sandbox first');
+			return;
+		}
+		
+		showInfo('Refreshing Visualization', `Using ${$backtestResults.length} backtest results`);
+		
+		// Clear caches to force regeneration
+		backtestResultsCache.clear();
+		surfaceDataCache.clear();
+		
+		// Populate cache with ALL backtest results from the store
+		$backtestResults.forEach(result => {
+			if (result && result.parameters) {
+				// Use both rebalancePercent and rebalanceThreshold for compatibility
+				const rebalanceValue = result.parameters.rebalancePercent || result.parameters.rebalanceThreshold || 50;
+				const zScoreValue = result.parameters.zScoreThreshold || 1.5;
+				
+				// Create multiple cache keys to ensure we find the data
+				const key1 = `${rebalanceValue}_${zScoreValue}`;
+				const key2 = `${Math.round(rebalanceValue)}_${zScoreValue}`;
+				
+				const cacheEntry = {
+					parameters: {
+						rebalanceThreshold: rebalanceValue,
+						rebalancePercent: rebalanceValue,
+						zScoreThreshold: zScoreValue,
+						...result.parameters
+					},
+					btcGrowthPercent: result.btcGrowthPercent || 0,
+					totalTrades: result.totalTrades || 0,
+					sharpeRatio: result.sharpeRatio || 0,
+					maxDrawdown: result.maxDrawdown || 0
+				};
+				
+				backtestResultsCache.set(key1, cacheEntry);
+				backtestResultsCache.set(key2, cacheEntry);
+			}
+		});
+		
+		console.log(`Populated cache with ${backtestResultsCache.size} entries from ${$backtestResults.length} results`);
+		
+		// Force regeneration of the surface
+		await updateVisualization();
+		
+		showSuccess('Visualization Updated', `Surface generated from ${$backtestResults.length} backtest results`);
+	}
+	
 	// Component lifecycle
 	onMount(async () => {
 		// Wait for Plotly.js to be available
@@ -475,10 +565,16 @@
 		updateVisualization();
 	}
 	
+	// Don't automatically update during iterations
+	// The visualization will update when user clicks a result
+	// or manually refreshes
+	
 	// React to settings changes
 	$: if (visualSettings && plotlyReady) {
 		updateVisualization();
 	}
+	
+	let updateDebounce;
 </script>
 
 <div class="parameter-landscape-3d">
@@ -507,6 +603,17 @@
 				<button class="action-btn secondary" on:click={exportAsImage}>
 					<span class="btn-icon">📸</span>
 					Export PNG
+				</button>
+			</div>
+			
+			<div class="control-item">
+				<button 
+					class="action-btn primary" 
+					on:click={refreshFromBacktestResults}
+					disabled={$backtestResults.length === 0}
+				>
+					<span class="btn-icon">🔄</span>
+					Refresh from {$backtestResults.length} Results
 				</button>
 			</div>
 		</div>

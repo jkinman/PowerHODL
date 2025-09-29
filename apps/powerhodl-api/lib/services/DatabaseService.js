@@ -3,6 +3,28 @@
  * 
  * Handles all database operations for the trading system.
  * Uses Neon serverless Postgres as the backend database.
+ * 
+ * CRITICAL CONCEPTS:
+ * 
+ * 1. POSTGRESQL NUMERIC TYPES
+ *    - Postgres returns DECIMAL/NUMERIC as strings to prevent precision loss
+ *    - ALWAYS use parseFloat() or Number() when reading numeric data
+ *    - This is why we see '0.0404600000' instead of 0.04046
+ * 
+ * 2. REAL DATA IS ESSENTIAL
+ *    - Backtesting is only valid with real historical market data
+ *    - Simulated data can hide real-world behaviors (gaps, volatility clusters)
+ *    - 4+ years of data needed to test different market regimes
+ * 
+ * 3. DATA CONSISTENCY
+ *    - All timestamps should be ISO strings in UTC
+ *    - Use collected_at for when data was gathered
+ *    - Normalize all data formats in one place (see SimpleBacktestEngine)
+ * 
+ * 4. PERFORMANCE CONSIDERATIONS
+ *    - Index on collected_at for time-based queries
+ *    - Batch inserts for seeding large datasets
+ *    - Connection pooling handled by Neon
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -96,17 +118,15 @@ export class DatabaseService {
      */
     async getHistoricalData(days = 30) {
         try {
-            // Calculate the date threshold
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - days);
-
+            // Get data starting from the oldest available data (for backtesting historical periods)
+            // This ensures we test on actual historical data, not just recent market conditions
             const data = await this.sql`
                 SELECT * FROM market_snapshots 
-                WHERE collected_at >= ${startDate.toISOString()}
                 ORDER BY collected_at ASC
+                LIMIT ${days * 288}
             `;
 
-            this.logger.info(`Retrieved ${data.length} historical records for ${days} days`);
+            this.logger.info(`Retrieved ${data.length} historical records starting from oldest data (requested ${days} days worth)`);
             return data;
 
         } catch (error) {
@@ -355,6 +375,210 @@ export class DatabaseService {
         } catch (error) {
             this.logger.error('Database connection test failed', error);
             return false;
+        }
+    }
+
+    // ==================== Algorithm Parameters Methods ====================
+
+    /**
+     * Get active algorithm parameters
+     * Returns the currently active parameter set
+     */
+    async getActiveParameters() {
+        try {
+            const result = await this.sql`
+                SELECT * FROM algorithm_parameters 
+                WHERE is_active = true 
+                ORDER BY updated_at DESC 
+                LIMIT 1
+            `;
+            
+            if (result.length === 0) {
+                // Return system defaults if no active params
+                const defaults = await this.sql`
+                    SELECT * FROM algorithm_parameters 
+                    WHERE is_default = true 
+                    LIMIT 1
+                `;
+                return defaults[0] || null;
+            }
+            
+            return result[0];
+        } catch (error) {
+            this.logger.error('Failed to get active parameters', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save new algorithm parameters from backtest
+     * @param {Object} params - Parameter configuration
+     * @param {Object} performance - Backtest performance metrics
+     * @param {string} name - Name for this parameter set
+     * @param {string} description - Description of parameters
+     */
+    async saveAlgorithmParameters(params, performance, name, description = '') {
+        try {
+            const result = await this.sql`
+                INSERT INTO algorithm_parameters (
+                    name,
+                    description,
+                    parameters,
+                    z_score_threshold,
+                    rebalance_percent,
+                    transaction_cost,
+                    lookback_window,
+                    trade_frequency_minutes,
+                    max_allocation_shift,
+                    neutral_zone,
+                    min_allocation,
+                    max_allocation,
+                    backtest_performance,
+                    created_by
+                ) VALUES (
+                    ${name},
+                    ${description},
+                    ${JSON.stringify(params)}::jsonb,
+                    ${params.zScoreThreshold || 1.5},
+                    ${params.rebalancePercent || 10.0},
+                    ${params.transactionCost || 1.66},
+                    ${params.lookbackWindow || 15},
+                    ${params.tradeFrequencyMinutes || 720},
+                    ${params.maxAllocationShift || 0.3},
+                    ${params.neutralZone || 0.5},
+                    ${params.minAllocation || 0.25},
+                    ${params.maxAllocation || 0.75},
+                    ${JSON.stringify(performance)}::jsonb,
+                    'user'
+                )
+                RETURNING *
+            `;
+            
+            this.logger.info(`Saved new algorithm parameters: ${name}`);
+            return result[0];
+        } catch (error) {
+            this.logger.error('Failed to save algorithm parameters', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Activate a parameter set
+     * Deactivates current active params and activates the specified one
+     * @param {number} parameterId - ID of parameter set to activate
+     */
+    async activateParameters(parameterId) {
+        try {
+            // Start transaction
+            await this.sql`BEGIN`;
+            
+            // Get current active params
+            const currentActive = await this.sql`
+                SELECT id FROM algorithm_parameters 
+                WHERE is_active = true
+            `;
+            
+            // Deactivate current params
+            if (currentActive.length > 0) {
+                await this.sql`
+                    UPDATE algorithm_parameters 
+                    SET is_active = false, updated_at = NOW() 
+                    WHERE is_active = true
+                `;
+            }
+            
+            // Activate new params
+            await this.sql`
+                UPDATE algorithm_parameters 
+                SET is_active = true, updated_at = NOW() 
+                WHERE id = ${parameterId}
+            `;
+            
+            // Record in history
+            await this.sql`
+                INSERT INTO parameter_history (
+                    parameter_id,
+                    action,
+                    previous_parameter_id,
+                    notes
+                ) VALUES (
+                    ${parameterId},
+                    'ACTIVATED',
+                    ${currentActive[0]?.id || null},
+                    'Activated via frontend'
+                )
+            `;
+            
+            // Commit transaction
+            await this.sql`COMMIT`;
+            
+            this.logger.info(`Activated parameter set: ${parameterId}`);
+            return true;
+        } catch (error) {
+            await this.sql`ROLLBACK`;
+            this.logger.error('Failed to activate parameters', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all saved parameter sets
+     * @param {number} limit - Max results to return
+     * @param {number} offset - Pagination offset
+     */
+    async getAllParameters(limit = 50, offset = 0) {
+        try {
+            const result = await this.sql`
+                SELECT * FROM algorithm_parameters 
+                ORDER BY created_at DESC 
+                LIMIT ${limit} 
+                OFFSET ${offset}
+            `;
+            
+            return result;
+        } catch (error) {
+            this.logger.error('Failed to get all parameters', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get parameter history
+     * @param {number} parameterId - Optional parameter ID to filter by
+     */
+    async getParameterHistory(parameterId = null) {
+        try {
+            let query;
+            if (parameterId) {
+                query = this.sql`
+                    SELECT 
+                        ph.*,
+                        ap.name as parameter_name,
+                        prev.name as previous_parameter_name
+                    FROM parameter_history ph
+                    LEFT JOIN algorithm_parameters ap ON ph.parameter_id = ap.id
+                    LEFT JOIN algorithm_parameters prev ON ph.previous_parameter_id = prev.id
+                    WHERE ph.parameter_id = ${parameterId}
+                    ORDER BY ph.created_at DESC
+                `;
+            } else {
+                query = this.sql`
+                    SELECT 
+                        ph.*,
+                        ap.name as parameter_name,
+                        prev.name as previous_parameter_name
+                    FROM parameter_history ph
+                    LEFT JOIN algorithm_parameters ap ON ph.parameter_id = ap.id
+                    LEFT JOIN algorithm_parameters prev ON ph.previous_parameter_id = prev.id
+                    ORDER BY ph.created_at DESC
+                    LIMIT 100
+                `;
+            }
+            
+            return await query;
+        } catch (error) {
+            this.logger.error('Failed to get parameter history', error);
+            throw error;
         }
     }
 

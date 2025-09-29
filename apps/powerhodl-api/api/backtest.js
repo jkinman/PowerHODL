@@ -2,6 +2,35 @@
  * SIMPLIFIED Backtest API - Vercel Serverless Function
  * 
  * Uses SimpleBacktestEngine - no complex layers!
+ * 
+ * CRITICAL CONCEPTS:
+ * 
+ * 1. PARAMETER NORMALIZATION
+ *    - Frontend might send different parameter names (historical baggage)
+ *    - Always normalize to consistent internal names
+ *    - rebalancePercent = rebalanceThreshold = deviation from 50/50
+ *    - lookbackDays = lookbackWindow = Z-score calculation period
+ * 
+ * 2. REAL DATA ONLY
+ *    - useRealData should ALWAYS be true in production
+ *    - Test data was only for initial development
+ *    - Real market behavior can't be simulated accurately
+ * 
+ * 3. BACKTEST PERIODS
+ *    - 30 days = recent market behavior
+ *    - 365 days = full year including seasonality
+ *    - "ALL" = 4+ years to test different market regimes
+ * 
+ * 4. PERFORMANCE METRICS
+ *    - btcGrowthPercent = primary metric (BTC accumulation) [[memory:9297280]]
+ *    - tokenAccumulationPercent = total tokens (BTC + ETH) growth
+ *    - totalFeesBTC = critical to track fee impact
+ *    - trades array = for debugging and optimization
+ * 
+ * 5. FEE IMPACT IS CRITICAL
+ *    - Every trade costs money
+ *    - Too many trades = negative returns guaranteed
+ *    - The optimizer must balance opportunity vs. costs
  */
 
 import { SimpleBacktestEngine } from '../src/SimpleBacktestEngine.js';
@@ -93,7 +122,14 @@ export default async function handler(req, res) {
                         totalTrades: results.metrics.totalTrades,
                         sharpeRatio: results.metrics.sharpeRatio,
                         maxDrawdown: results.metrics.maxDrawdown,
-                        totalFeesBTC: results.metrics.totalFeesBTC
+                        totalFeesBTC: results.metrics.totalFeesBTC,
+                        winRate: results.metrics.winRate,
+                        winningTrades: results.metrics.winningTrades,
+                        losingTrades: results.metrics.losingTrades,
+                        avgWinBTC: results.metrics.avgWinBTC,
+                        avgLossBTC: results.metrics.avgLossBTC,
+                        profitFactor: results.metrics.profitFactor,
+                        maxConsecutiveLosses: results.metrics.maxConsecutiveLosses
                     },
                     trades: results.trades.map(t => ({
                         timestamp: t.timestamp,

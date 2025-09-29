@@ -13,7 +13,8 @@
 	} from '$lib/stores';
 	
 	// Import portfolio components
-	import PortfolioSummary from '../portfolio/PortfolioSummary.svelte';
+	import TopWidgets from '../dashboard/TopWidgets.svelte';
+	import CompactDashboard from '../portfolio/CompactDashboard.svelte';
 	import PortfolioChart from '../portfolio/PortfolioChart.svelte';
 	import RecentTrades from '../portfolio/RecentTrades.svelte';
 	import GradientDescentSandbox from '../backtest/GradientDescentSandboxSimplified.svelte';
@@ -57,7 +58,7 @@
 			const trades = [];
 			
 			// If the API returned recent trades, add them
-			if (data.recentTrades && data.recentTrades.length > 0) {
+			if (data && data.recentTrades && data.recentTrades.length > 0) {
 				data.recentTrades.forEach(trade => addTrade(trade));
 			}
 		} catch (error) {
@@ -67,11 +68,14 @@
 </script>
 
 <div class="dashboard-view">
+	<!-- Top Widgets Row -->
+	<TopWidgets />
+	
 	<!-- Main Content Grid -->
 	<div class="dashboard-grid">
-		<!-- Portfolio Summary - Full Width -->
+		<!-- Compact Dashboard - Full Width -->
 		<div class="grid-item full-width">
-			<PortfolioSummary />
+			<CompactDashboard />
 		</div>
 		
 		<!-- Portfolio Chart - Large -->
@@ -79,8 +83,8 @@
 			<PortfolioChart />
 		</div>
 		
-		<!-- Recent Trades - Sidebar -->
-		<div class="grid-item sidebar-area">
+		<!-- Recent Trades - Moved to right column -->
+		<div class="grid-item trades-area">
 			<RecentTrades />
 		</div>
 		
@@ -93,8 +97,9 @@
 
 <style>
 	.dashboard-view {
-		padding: 0;
+		padding: 24px 0;
 		min-height: 100%;
+		width: 100%;
 	}
 
 	.dashboard-grid {
@@ -119,7 +124,7 @@
 		grid-row: 2;
 	}
 
-	.sidebar-area {
+	.trades-area {
 		grid-column: 2;
 		grid-row: 2;
 	}
@@ -136,7 +141,7 @@
 
 		.full-width,
 		.chart-area,
-		.sidebar-area {
+		.trades-area {
 			grid-column: 1;
 			grid-row: auto;
 		}
@@ -144,20 +149,22 @@
 
 	@media (max-width: 768px) {
 		.dashboard-view {
-			padding: 0;
+			padding: 16px 0;
 		}
 
 		.dashboard-grid {
 			gap: 16px;
 		}
-
 	}
 
 	@media (max-width: 480px) {
+		.dashboard-view {
+			padding: 12px 0;
+		}
+		
 		.dashboard-grid {
 			gap: 12px;
 		}
-
 	}
 
 	/* Animation for loading */

@@ -6,24 +6,52 @@
  */
 
 import { ZScoreCalculator, DEFAULT_ZSCORE_PARAMS } from '../../../packages/shared/src/ZScoreCalculator.js';
+import { DatabaseService } from '../lib/services/DatabaseService.js';
 
 export class SimpleStrategy {
     constructor() {
-        // Mega-optimal parameters from extensive testing
+        // Default parameters - will be overridden by database values
         this.parameters = {
-            zScoreThreshold: 1.258,
-            
-            // CRITICAL: This controls how much portfolio deviation from 50/50 is allowed
-            // before triggering a rebalance. This is NOT a target percentage!
-            // Lower values = more frequent trading = more fees = worse returns
-            // Higher values = less frequent trading = miss opportunities
-            // The gradient descent optimizer should find the sweet spot that balances
-            // capturing opportunities vs minimizing trading costs
-            rebalancePercent: 49.79,  // TODO: This value needs optimization
-            
+            zScoreThreshold: 1.5,
+            rebalancePercent: 10.0,
             transactionCost: 1.66,
-            lookbackDays: 15
+            lookbackDays: 15,
+            tradeFrequencyMinutes: 720, // 12 hours default
+            maxAllocationShift: 0.3,
+            neutralZone: 0.5,
+            minAllocation: 0.25,
+            maxAllocation: 0.75
         };
+        
+        // Load parameters from database on initialization
+        this.loadParametersFromDatabase();
+    }
+    
+    /**
+     * Load active parameters from database
+     * This ensures live trading uses the same parameters that were tested
+     */
+    async loadParametersFromDatabase() {
+        try {
+            const dbService = new DatabaseService();
+            const activeParams = await dbService.getActiveParameters();
+            
+            if (activeParams && activeParams.parameters) {
+                // Merge database parameters with defaults
+                this.parameters = {
+                    ...this.parameters,
+                    ...activeParams.parameters
+                };
+                
+                console.log('📊 Loaded active parameters from database:', activeParams.name);
+                console.log('Parameters:', this.parameters);
+            } else {
+                console.log('⚠️ No active parameters found in database, using defaults');
+            }
+        } catch (error) {
+            console.error('❌ Failed to load parameters from database:', error);
+            console.log('Using default parameters');
+        }
     }
 
     /**

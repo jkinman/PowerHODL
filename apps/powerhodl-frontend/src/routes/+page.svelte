@@ -9,32 +9,48 @@
 		updatePortfolio 
 	} from '$lib/stores';
 	
-	// Initialize with some demo data
-	onMount(() => {
+	// Initialize and load real data
+	onMount(async () => {
 		// Welcome message
-		showSuccess('PowerHODL Initialized', 'Svelte edition is ready for BTC accumulation!');
+		showSuccess('PowerHODL Initialized', 'Loading real market data...');
 		
-		// Load some demo market data
-		updateMarketData({
-			ethPriceUSD: 2650,
-			btcPriceUSD: 67200,
-			zScore: -0.456,
-			source: 'demo'
-		});
-		
-		// Load demo portfolio
-		updatePortfolio({
-			btcAmount: 0.485,
-			ethAmount: 8.234
-		});
-		
-		// Show info about the migration
-		setTimeout(() => {
-			showInfo(
-				'Layout Complete!', 
-				'Dashboard layout and gradient descent sandbox are now powered by Svelte. Real components coming next.'
-			);
-		}, 2000);
+		// Load real market and portfolio data
+		try {
+			// Fetch real data from API
+			const [marketResponse, portfolioResponse] = await Promise.all([
+				fetch(`${import.meta.env.DEV ? 'http://localhost:9001' : (import.meta.env.VITE_API_URL || 'https://powerhodl-api.vercel.app')}/api/historical?timeframe=1d`),
+				fetch(`${import.meta.env.DEV ? 'http://localhost:9001' : (import.meta.env.VITE_API_URL || 'https://powerhodl-api.vercel.app')}/api/portfolio`)
+			]);
+			
+			if (marketResponse.ok) {
+				const marketData = await marketResponse.json();
+				if (marketData.data && marketData.data.length > 0) {
+					const latestData = marketData.data[marketData.data.length - 1];
+					updateMarketData({
+						ethPriceUSD: latestData.eth_price_usd || latestData.ethPriceUSD,
+						btcPriceUSD: latestData.btc_price_usd || latestData.btcPriceUSD,
+						ethBtcRatio: latestData.eth_btc_ratio || latestData.ethBtcRatio,
+						zScore: latestData.z_score || latestData.zScore || 0,
+						source: 'database'
+					});
+				}
+			}
+			
+			if (portfolioResponse.ok) {
+				const portfolioData = await portfolioResponse.json();
+				if (portfolioData.data) {
+					updatePortfolio({
+						btcAmount: portfolioData.data.btcAmount || 0,
+						ethAmount: portfolioData.data.ethAmount || 0
+					});
+				}
+			}
+			
+			showSuccess('Data Loaded', 'Real market data and portfolio loaded successfully');
+		} catch (error) {
+			console.error('Failed to load data:', error);
+			showInfo('Using Demo Data', 'Failed to load real data, using demo values');
+		}
 	});
 </script>
 

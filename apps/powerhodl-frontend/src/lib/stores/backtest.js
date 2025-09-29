@@ -2,11 +2,45 @@
  * Gradient Descent Sandbox Store
  * 
  * Manages parameter optimization, backtesting state, results, and performance analysis
+ * 
+ * CRITICAL CONCEPTS:
+ * 
+ * 1. PARAMETER OPTIMIZATION IS THE GOAL
+ *    - This store manages the search for optimal trading parameters
+ *    - The gradient descent process tests different combinations
+ *    - Success = finding parameters that maximize returns AFTER fees
+ * 
+ * 2. RESULTS MUST BE DETERMINISTIC
+ *    - Same parameters + same data = same results ALWAYS
+ *    - If results vary, there's a bug (likely data type issues)
+ *    - This is why pure functions are critical
+ * 
+ * 3. VISUALIZATION DRIVES UNDERSTANDING
+ *    - 3D surface shows parameter landscape
+ *    - Helps identify local vs global maxima
+ *    - Shows if we're overfitting to specific time periods
+ * 
+ * 4. KEY PARAMETERS TO OPTIMIZE
+ *    - rebalancePercent: Controls trading frequency (critical for fees)
+ *    - zScoreThreshold: Signal strength required to trade
+ *    - lookbackDays: How much history for Z-score calculation
+ *    - transactionCost: Fixed but affects optimal other params
+ * 
+ * 5. COMMON PITFALLS
+ *    - Optimizing for past performance (overfitting)
+ *    - Ignoring transaction costs
+ *    - Not testing across different market regimes
+ *    - Confusing gross returns with net returns
  */
 
 import { writable, derived } from 'svelte/store';
 
 // === Backtest State ===
+
+/**
+ * Currently selected backtest result for detailed viewing
+ */
+export const selectedBacktestResult = writable(null);
 
 /**
  * Current backtest execution state
@@ -319,6 +353,9 @@ export async function runOptimization(iterations = 10, baseParameters) {
 				timeRemaining
 			}));
 			
+			// Yield to UI thread before running backtest
+			await new Promise(resolve => setTimeout(resolve, 10));
+			
 			// Run backtest
 			const result = await runSingleBacktest(params);
 			
@@ -346,6 +383,9 @@ export async function runOptimization(iterations = 10, baseParameters) {
 			
 			// Update results
 			optimizationResults.set([...results]);
+			
+			// Yield to UI thread after each iteration
+			await new Promise(resolve => setTimeout(resolve, 50));
 		}
 		
 		// Complete optimization

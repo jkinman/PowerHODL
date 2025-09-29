@@ -15,13 +15,11 @@
 	
 	// Import layout components
 	import Header from './Header.svelte';
-	import Sidebar from './Sidebar.svelte';
 	import MainContent from './MainContent.svelte';
 	import NotificationPanel from './NotificationPanel.svelte';
 	
 	// Local state
 	let notificationPanelOpen = false;
-	let sidebarCollapsed = false;
 	
 	// Initialize application
 	onMount(() => {
@@ -38,10 +36,6 @@
 				notificationPanelOpen = !notificationPanelOpen;
 			}
 			
-			if (event.key === 's' && (event.ctrlKey || event.metaKey)) {
-				event.preventDefault();
-				sidebarCollapsed = !sidebarCollapsed;
-			}
 		};
 		
 		document.addEventListener('keydown', handleKeydown);
@@ -80,24 +74,8 @@
 	
 	<!-- Main Content Area -->
 	<div class="dashboard-body">
-		<!-- Sidebar -->
-		<div class="sidebar-container" class:collapsed={sidebarCollapsed}>
-			<Sidebar />
-			
-			<!-- Sidebar Toggle (Mobile) -->
-			<button 
-				class="sidebar-toggle"
-				on:click={() => sidebarCollapsed = !sidebarCollapsed}
-				title="Toggle sidebar"
-			>
-				<span class="toggle-icon" class:collapsed={sidebarCollapsed}>
-					{sidebarCollapsed ? '→' : '←'}
-				</span>
-			</button>
-		</div>
-		
-		<!-- Main Content -->
-		<div class="content-area" class:expanded={sidebarCollapsed}>
+		<!-- Main Content (Full Width) -->
+		<div class="content-area">
 			<MainContent />
 		</div>
 	</div>
@@ -156,56 +134,24 @@
 		overflow: hidden;
 	}
 
-	.sidebar-container {
-		position: relative;
-		transition: margin-left 0.3s ease;
-	}
-
-	.sidebar-container.collapsed {
-		margin-left: -300px;
-	}
-
-	.sidebar-toggle {
-		position: absolute;
-		top: 50%;
-		right: -15px;
-		transform: translateY(-50%);
-		background: #333;
-		border: 1px solid #555;
-		color: #fff;
-		width: 30px;
-		height: 60px;
-		border-radius: 0 8px 8px 0;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s ease;
-		z-index: 10;
-	}
-
-	.sidebar-toggle:hover {
-		background: #444;
-		border-color: #666;
-	}
-
-	.toggle-icon {
-		font-size: 14px;
-		font-weight: bold;
-		transition: transform 0.2s ease;
-	}
-
-	.toggle-icon.collapsed {
-		transform: scaleX(-1);
-	}
-
 	.content-area {
 		flex: 1;
-		transition: margin-left 0.3s ease;
+		width: 100%;
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0 24px;
 	}
-
-	.content-area.expanded {
-		margin-left: 0;
+	
+	@media (max-width: 768px) {
+		.content-area {
+			padding: 0 16px;
+		}
+	}
+	
+	@media (max-width: 480px) {
+		.content-area {
+			padding: 0 12px;
+		}
 	}
 
 	/* Loading Overlay */
@@ -335,25 +281,6 @@
 
 	/* Responsive Design */
 	@media (max-width: 1200px) {
-		.sidebar-toggle {
-			display: block;
-		}
-	}
-
-	@media (max-width: 768px) {
-		.sidebar-container {
-			margin-left: -300px;
-		}
-
-		.sidebar-container.collapsed {
-			margin-left: -300px;
-		}
-
-		.sidebar-toggle {
-			right: -20px;
-			width: 40px;
-			height: 80px;
-		}
 
 		.toast-container {
 			bottom: 16px;

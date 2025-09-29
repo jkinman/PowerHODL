@@ -156,12 +156,13 @@ export function updateMarketData(newData) {
 	marketData.update(current => ({
 		...current,
 		...newData,
-		ethBtcRatio: newData.ethPriceUSD && newData.btcPriceUSD 
+		ethBtcRatio: newData.ethBtcRatio || (newData.ethPriceUSD && newData.btcPriceUSD 
 			? newData.ethPriceUSD / newData.btcPriceUSD 
-			: current.ethBtcRatio,
-		lastUpdate: new Date().toISOString(),
+			: current.ethBtcRatio),
+		lastUpdate: newData.lastUpdate || new Date().toISOString(),
 		dataAge: 0,
-		isLive: true
+		isLive: true,
+		source: newData.source || 'api'
 	}));
 }
 

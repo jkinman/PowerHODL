@@ -80,6 +80,7 @@ export {
 	backtestState,
 	backtestResults,
 	backtestHistory,
+	selectedBacktestResult,
 	
 	// Gradient descent optimization state
 	optimizationState,

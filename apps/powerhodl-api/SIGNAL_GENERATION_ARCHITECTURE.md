@@ -3,6 +3,43 @@
 ## Overview
 PowerHODL uses a **single, unified signal generation strategy** across all components to ensure consistency.
 
+## CRITICAL CONCEPTS - MUST READ
+
+### 1. FEES DESTROY RETURNS
+- **Every trade costs money** (transaction fees + slippage + spread)
+- With 1.66% fees per trade, 60 trades = 100% of your capital gone!
+- **Frequent trading is the enemy of profits**
+- The entire optimization process is about finding the sweet spot between capturing opportunities and minimizing fees
+
+### 2. PARAMETERS CONTROL EVERYTHING
+- **rebalancePercent**: How much deviation from 50/50 before rebalancing
+  - NOT a target percentage!
+  - Lower = more trades = more fees = worse returns
+  - Higher = fewer trades = might miss opportunities
+- **zScoreThreshold**: How extreme the ratio must be to trade
+  - Higher = fewer but higher confidence trades
+  - Must be high enough that expected profit > transaction costs
+- **lookbackDays**: How much history for Z-score calculation
+  - Too short = noisy signals
+  - Too long = slow to adapt
+
+### 3. MEAN REVERSION IS THE STRATEGY
+- When ETH/BTC ratio is extreme, it tends to revert to mean
+- High Z-score = ETH expensive relative to history = SELL ETH
+- Low Z-score = ETH cheap relative to history = BUY ETH
+- Success depends on ratios actually reverting (not guaranteed!)
+
+### 4. DETERMINISM IS CRITICAL
+- Same inputs MUST produce same outputs
+- No randomness, no external dependencies
+- This enables reliable backtesting and optimization
+- If results vary with same parameters, there's a bug
+
+### 5. THE GOAL: ACCUMULATE MORE BTC [[memory:9297280]]
+- Success is measured in BTC growth, not USD value
+- We're not just rebalancing to 50/50
+- We're trying to accumulate more total tokens by exploiting ratio oscillations
+
 ## Core Component: SimpleStrategy
 
 Location: `/apps/powerhodl-api/src/SimpleStrategy.js`

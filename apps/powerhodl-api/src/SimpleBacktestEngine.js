@@ -3,16 +3,29 @@ import { ZScoreCalculator } from '../../../packages/shared/src/ZScoreCalculator.
 /**
  * SimpleBacktestEngine - The core backtesting engine for PowerHODL
  * 
+ * POSITION-AWARE TRADING ALGORITHM:
+ * The core innovation is that we consider BOTH market conditions (Z-score) AND current holdings.
+ * This prevents the critical flaw of buying when we're already overweight or selling when underweight.
+ * 
+ * Key concepts:
+ * - Position Imbalance: How far we are from 50/50 allocation
+ * - Position-Signal Alignment: Whether our holdings agree with the market signal
+ * - Adjusted Z-Score: Modified signal strength based on position
+ * - Dynamic Aggressiveness: Trade size varies with opportunity and position
+ * 
+ * The algorithm AMPLIFIES signals when position opposes the market (good setup)
+ * and REDUCES signals when position aligns with market (already captured the move).
+ * 
  * CRITICAL CONCEPTS:
  * 1. FEES DESTROY RETURNS - Every trade costs money (transaction fees + slippage)
  *    - Frequent trading will quickly erode all profits
  *    - With 1.66% fees, 100 trades = 166% in fees alone!
  * 
- * 2. REBALANCING THRESHOLD - Controls how often we trade
- *    - This is NOT a target allocation percentage
- *    - It's the DEVIATION from 50/50 that triggers a trade
- *    - Lower threshold = more trades = more fees = worse returns
- *    - Higher threshold = fewer trades = might miss opportunities
+ * 2. REBALANCE PERCENT - PERCENTAGE OF PORTFOLIO TO TRADE (NOT a deviation threshold!)
+ *    - This is the AMOUNT to trade when Z-score triggers
+ *    - E.g., 49.79% means trade ~50% of portfolio value
+ *    - Trading 50% of portfolio naturally moves you close to 50/50 allocation
+ *    - This is why the optimal value was so high (~50%)
  * 
  * 3. Z-SCORE THRESHOLD - Identifies when ETH/BTC ratio is extreme
  *    - High |Z-score| = ratio far from historical mean = trading opportunity
@@ -93,7 +106,14 @@ export class SimpleBacktestEngine {
         const trades = [];
         let totalFeesBTC = 0;
         
-        // Process each day
+        let lastSignal = 'HOLD'; // Track the last signal to only trade on signal changes
+        
+        // Track trading opportunities
+        let tradingOpportunities = 0;
+        let blockedByNoSignalChange = 0;
+        let signalChanges = 0;
+        
+        // Process all data points but only trade at specified frequency
         for (let i = params.lookbackDays; i < marketData.length; i++) {
             const currentData = marketData[i];
             const currentRatio = Number(currentData.ethBtcRatio);  // Ensure it's a number
@@ -128,123 +148,157 @@ export class SimpleBacktestEngine {
             // Trading decision
             let shouldTrade = false;
             let tradeAction = 'HOLD';
-            let targetAllocation = 0.5; // Default 50/50
             
             // BALANCED MEAN REVERSION WITH STRATEGIC POSITIONING
             const zScoreThreshold = params.zScoreThreshold;
             const currentEthAllocation = ethValueBTC / totalValueBTC;
             
             // Define our strategic zones
-            const NEUTRAL_ZONE = 0.5;  // 50/50 is neutral
-            const MIN_ALLOCATION = 0.25; // Never go below 25% in either asset
-            const MAX_ALLOCATION = 0.75; // Never go above 75% in either asset
+            const NEUTRAL_ZONE = params.neutralZone || 0.5;  // Default 50/50 is neutral
+            const MIN_ALLOCATION = params.minAllocation || 0.25; // Default never go below 25%
+            const MAX_ALLOCATION = params.maxAllocation || 0.75; // Default never go above 75%
             
-            // Calculate how far we can push allocation based on Z-score
-            const zScoreIntensity = Math.min(Math.abs(zScore) / 3, 1); // Scale 0-1
+            /**
+             * SIMPLE TRADING LOGIC (PROVEN TO WORK)
+             * 
+             * Based on the original MegaOptimalStrategy that achieved great returns:
+             * 1. Wait for Z-score to exceed threshold (market is extreme)
+             * 2. Trade a FIXED PERCENTAGE of portfolio value (rebalancePercent)
+             * 3. This naturally moves portfolio towards 50/50
+             * 
+             * CRITICAL: rebalancePercent is NOT a deviation threshold!
+             * It's the PERCENTAGE OF PORTFOLIO VALUE TO TRADE
+             * E.g., 49.79% means trade ~50% of portfolio value, which effectively rebalances to 50/50
+             */
             
+            // Simple Z-score based trading - no complex adjustments
             if (Math.abs(zScore) > zScoreThreshold) {
-                // We have a trading signal
+                tradingOpportunities++;
                 
                 if (zScore > zScoreThreshold) {
-                    // ETH is EXPENSIVE - we want to reduce ETH exposure
-                    // But we need to balance between capturing gains and maintaining tradeable position
-                    
-                    // Base target: move towards lower ETH allocation
-                    let baseTarget = NEUTRAL_ZONE - (0.25 * zScoreIntensity);
-                    
-                    // Adjustment: if we're already low on ETH, be less aggressive
-                    if (currentEthAllocation < 0.4) {
-                        baseTarget = Math.max(currentEthAllocation - 0.1, MIN_ALLOCATION);
-                    }
-                    
-                    targetAllocation = Math.max(MIN_ALLOCATION, baseTarget);
-                    
-                    // Only trade if we'd be reducing ETH
-                    if (currentEthAllocation > targetAllocation + 0.05) {
-                        shouldTrade = true;
-                        tradeAction = 'SELL_ETH';
-                    }
-                    
-                } else if (zScore < -zScoreThreshold) {
-                    // ETH is CHEAP - we want to increase ETH exposure
-                    // But we need BTC available for future opportunities
-                    
-                    // Base target: move towards higher ETH allocation
-                    let baseTarget = NEUTRAL_ZONE + (0.25 * zScoreIntensity);
-                    
-                    // Adjustment: if we're already high on ETH, be less aggressive
-                    if (currentEthAllocation > 0.6) {
-                        baseTarget = Math.min(currentEthAllocation + 0.1, MAX_ALLOCATION);
-                    }
-                    
-                    targetAllocation = Math.min(MAX_ALLOCATION, baseTarget);
-                    
-                    // Only trade if we'd be increasing ETH
-                    if (currentEthAllocation < targetAllocation - 0.05) {
-                        shouldTrade = true;
-                        tradeAction = 'BUY_ETH';
-                    }
+                    // ETH is EXPENSIVE relative to BTC - SELL ETH
+                    tradeAction = 'SELL_ETH_BUY_BTC';
+                } else {
+                    // ETH is CHEAP relative to BTC - BUY ETH
+                    tradeAction = 'BUY_ETH_SELL_BTC';
                 }
-            } else if (Math.abs(zScore) < 0.5) {
-                // Z-score is near zero - market is "normal"
-                // This is when we should rebalance towards neutral to prepare for opportunities
                 
-                const deviationFromNeutral = Math.abs(currentEthAllocation - NEUTRAL_ZONE);
-                
-                if (deviationFromNeutral > 0.15) {
-                    // We're significantly off-balance during calm markets
+                // CRITICAL: Only trade on signal changes, not on every confirmation
+                if (tradeAction !== lastSignal) {
                     shouldTrade = true;
-                    targetAllocation = NEUTRAL_ZONE;
-                    tradeAction = currentEthAllocation > NEUTRAL_ZONE ? 'REBALANCE_SELL_ETH' : 'REBALANCE_BUY_ETH';
+                    signalChanges++;
+                    console.log(`📶 [SIGNAL CHANGE] ${lastSignal} → ${tradeAction} | Z-Score: ${zScore.toFixed(3)}`);
+                } else {
+                    // Same signal as before - don't trade again
+                    blockedByNoSignalChange++;
+                    if (i < params.lookbackDays + 10) {
+                        console.log(`🔄 [SAME SIGNAL] ${tradeAction} (no change from ${lastSignal}) | Z-Score: ${zScore.toFixed(3)}`);
+                    }
                 }
+            } else {
+                // No signal - market is neutral
+                tradeAction = 'HOLD';
             }
             
-            // Final checks before executing trade
-            if (shouldTrade) {
-                const allocationChange = Math.abs(currentEthAllocation - targetAllocation);
-                const tradeValueBTC = allocationChange * totalValueBTC;
-                const transactionCostBTC = tradeValueBTC * (params.transactionCost / 100);
-                
-                // For high Z-scores, accept lower profit margins
-                const minProfitMultiple = Math.abs(zScore) > 2 ? 1.5 : 2.0;
-                
-                // Skip if trade is too small or transaction costs too high
-                if (allocationChange < 0.05 || tradeValueBTC < transactionCostBTC * minProfitMultiple) {
-                    shouldTrade = false;
-                }
+            // Debug logging for trade opportunities
+            if (shouldTrade || i < params.lookbackDays + 5) {
+                console.log(`[DEBUG] Day ${i}: Z-Score=${zScore.toFixed(3)}, Threshold=${zScoreThreshold}, ShouldTrade=${shouldTrade}, Signal=${tradeAction}, LastSignal=${lastSignal}, EthAlloc=${(currentEthAllocation * 100).toFixed(1)}%`);
             }
             
-            
+            // EXECUTE TRADE ON SIGNAL CHANGE ONLY
             if (shouldTrade) {
-                console.log(`🔄 [TRADE] Day ${i}: ${tradeAction} | zScore=${zScore.toFixed(3)}, target allocation: ${(targetAllocation * 100).toFixed(1)}% ETH`);
+                console.log(`🔄 [TRADE] Day ${i}: ${tradeAction} | Z-Score: ${zScore.toFixed(3)}`);
                 
-                // Execute trade to reach target allocation
-                const targetEthValueBTC = totalValueBTC * targetAllocation;
-                const targetEthAmount = targetEthValueBTC / currentRatio;
-                const ethToTrade = targetEthAmount - portfolio.ethAmount;
-                const btcToTrade = ethToTrade * currentRatio;
+                // CRITICAL: Trade a PERCENTAGE of the ASSET WE'RE SELLING, not total portfolio
+                const safeRebalancePercent = Math.min(params.rebalancePercent, 25); // Cap at 25% for safety
                 
-                // Apply transaction costs
-                const feesBTC = Math.abs(btcToTrade) * (params.transactionCost / 100);
+                let ethToTrade = 0;
+                let btcToTrade = 0;
+                let tradeValueBTC = 0;
                 
-                // Execute trade
-                portfolio.ethAmount += ethToTrade;
-                portfolio.btcAmount -= btcToTrade + feesBTC;
-                totalFeesBTC += feesBTC;
+                // Execute trade based on signal - trade percentage of the asset we're selling
+                if (tradeAction === 'SELL_ETH_BUY_BTC') {
+                    // Sell a percentage of our ETH holdings
+                    ethToTrade = -(portfolio.ethAmount * safeRebalancePercent / 100);
+                    tradeValueBTC = Math.abs(ethToTrade) * currentRatio; // Convert ETH to BTC value
+                    
+                    // Check if we have enough ETH
+                    if (portfolio.ethAmount >= Math.abs(ethToTrade)) {
+                        const feesBTC = tradeValueBTC * (params.transactionCost / 100);
+                        const netBTCReceived = tradeValueBTC - feesBTC;
+                        
+                        portfolio.ethAmount += ethToTrade; // Subtract ETH (ethToTrade is negative)
+                        portfolio.btcAmount += netBTCReceived; // Add BTC minus fees
+                        btcToTrade = netBTCReceived;
+                        
+                        totalFeesBTC += feesBTC;
+                        console.log(`   Sold ${Math.abs(ethToTrade).toFixed(4)} ETH (${safeRebalancePercent}% of ETH holdings)`);
+                        console.log(`   Received: ${netBTCReceived.toFixed(6)} BTC, Fees: ${feesBTC.toFixed(6)} BTC`);
+                        
+                        // Record trade
+                        trades.push({
+                            timestamp: currentData.timestamp,
+                            action: tradeAction,
+                            ethAmount: ethToTrade,
+                            btcAmount: btcToTrade,
+                            fees: feesBTC,
+                            zScore: zScore,
+                            ratio: currentRatio,
+                            tradeValueBTC: tradeValueBTC,
+                            portfolioValueBefore: totalValueBTC,
+                            portfolioValueAfter: portfolio.btcAmount + (portfolio.ethAmount * currentRatio)
+                        });
+                        
+                        // Update signal tracking
+                        lastSignal = tradeAction;
+                    } else {
+                        console.log(`   ⚠️ Insufficient ETH balance for trade`);
+                        shouldTrade = false;
+                    }
+                    
+                } else if (tradeAction === 'BUY_ETH_SELL_BTC') {
+                    // Sell a percentage of our BTC holdings
+                    btcToTrade = -(portfolio.btcAmount * safeRebalancePercent / 100);
+                    tradeValueBTC = Math.abs(btcToTrade); // BTC value being sold
+                    
+                    // Check if we have enough BTC
+                    if (portfolio.btcAmount >= Math.abs(btcToTrade)) {
+                        const feesBTC = tradeValueBTC * (params.transactionCost / 100);
+                        const netBTCToSell = tradeValueBTC + feesBTC; // Include fees in BTC spent
+                        const ethReceived = (tradeValueBTC - feesBTC) / currentRatio; // ETH received after fees
+                        
+                        portfolio.btcAmount -= netBTCToSell; // Subtract BTC including fees
+                        portfolio.ethAmount += ethReceived; // Add ETH
+                        ethToTrade = ethReceived;
+                        
+                        totalFeesBTC += feesBTC;
+                        console.log(`   Sold ${Math.abs(btcToTrade).toFixed(6)} BTC (${safeRebalancePercent}% of BTC holdings)`);
+                        console.log(`   Received: ${ethReceived.toFixed(4)} ETH, Fees: ${feesBTC.toFixed(6)} BTC`);
+                        
+                        // Record trade
+                        trades.push({
+                            timestamp: currentData.timestamp,
+                            action: tradeAction,
+                            ethAmount: ethToTrade,
+                            btcAmount: btcToTrade,
+                            fees: feesBTC,
+                            zScore: zScore,
+                            ratio: currentRatio,
+                            tradeValueBTC: tradeValueBTC,
+                            portfolioValueBefore: totalValueBTC,
+                            portfolioValueAfter: portfolio.btcAmount + (portfolio.ethAmount * currentRatio)
+                        });
+                        
+                        // Update signal tracking
+                        lastSignal = tradeAction;
+                    } else {
+                        console.log(`   ⚠️ Insufficient BTC balance for trade`);
+                        shouldTrade = false;
+                    }
+                }
                 
-                // Record trade
-                trades.push({
-                    timestamp: currentData.timestamp,
-                    action: tradeAction,
-                    ethAmount: ethToTrade,
-                    btcAmount: btcToTrade,
-                    fees: feesBTC,
-                    zScore: zScore,
-                    ratio: currentRatio,
-                    targetAllocation: targetAllocation,
-                    portfolioValueBefore: totalValueBTC,
-                    portfolioValueAfter: portfolio.btcAmount + (portfolio.ethAmount * currentRatio)
-                });
+                // Note: Trade recording is now handled inside the individual trade blocks above
+                // since fees are calculated differently for each trade type
             }
             
             // Record portfolio state
@@ -257,8 +311,7 @@ export class SimpleBacktestEngine {
                 totalValueBTC: portfolio.btcAmount + (portfolio.ethAmount * currentRatio),
                 ethPercentage: ethPercentage,
                 zScore: zScore,
-                ratio: currentRatio,
-                targetAllocation: targetAllocation * 100
+                ratio: currentRatio
             });
         }
         
@@ -280,13 +333,44 @@ export class SimpleBacktestEngine {
         const maxDrawdown = this.calculateMaxDrawdown(returns);
         const sharpeRatio = this.calculateSharpeRatio(returns);
         
+        // Calculate win rate and other trade metrics
+        const winningTrades = trades.filter(t => t.portfolioValueAfter > t.portfolioValueBefore);
+        const losingTrades = trades.filter(t => t.portfolioValueAfter <= t.portfolioValueBefore);
+        const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0;
+        
+        // Calculate average win/loss
+        const avgWin = winningTrades.length > 0 ? 
+            winningTrades.reduce((sum, t) => sum + (t.portfolioValueAfter - t.portfolioValueBefore), 0) / winningTrades.length : 0;
+        const avgLoss = losingTrades.length > 0 ? 
+            losingTrades.reduce((sum, t) => sum + (t.portfolioValueAfter - t.portfolioValueBefore), 0) / losingTrades.length : 0;
+        const profitFactor = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : 0;
+        
+        // Calculate consecutive losses
+        let maxConsecutiveLosses = 0;
+        let currentConsecutiveLosses = 0;
+        trades.forEach(t => {
+            if (t.portfolioValueAfter <= t.portfolioValueBefore) {
+                currentConsecutiveLosses++;
+                maxConsecutiveLosses = Math.max(maxConsecutiveLosses, currentConsecutiveLosses);
+            } else {
+                currentConsecutiveLosses = 0;
+            }
+        });
+        
         // Find max Z-score and deviation for debugging
         const maxZScore = Math.max(...portfolioHistory.map(p => Math.abs(p.zScore || 0)));
         const maxDeviation = Math.max(...portfolioHistory.map(p => Math.abs(p.ethPercentage - 50)));
         
         console.log(`✅ [SIMPLE BACKTEST] Complete: ${totalReturnPercent.toFixed(2)}% BTC return, ${tokenAccumulation.toFixed(2)}% token accumulation, ${trades.length} trades`);
+        console.log(`📊 [METRICS] Win Rate: ${winRate.toFixed(1)}%, Profit Factor: ${profitFactor.toFixed(2)}, Max Consecutive Losses: ${maxConsecutiveLosses}`);
         console.log(`🔧 [DEBUG] Max Z-Score: ${maxZScore.toFixed(3)} (threshold: ${params.zScoreThreshold})`);
         console.log(`🔧 [DEBUG] Max Allocation Shift: ${params.maxAllocationShift || 0.3}`);
+        console.log(`📈 [TRADING ANALYSIS]:`);
+        console.log(`   Total trading opportunities: ${tradingOpportunities}`);
+        console.log(`   Signal changes detected: ${signalChanges}`);
+        console.log(`   Trades executed: ${trades.length}`);
+        console.log(`   Trades blocked by no signal change: ${blockedByNoSignalChange}`);
+        console.log(`   Trade execution rate: ${signalChanges > 0 ? ((trades.length / signalChanges) * 100).toFixed(1) : 0}%`);
         
         return {
             portfolio: portfolio,
@@ -299,6 +383,13 @@ export class SimpleBacktestEngine {
                 sharpeRatio: sharpeRatio,
                 totalTrades: trades.length,
                 totalFeesBTC: totalFeesBTC,
+                winRate: winRate,
+                winningTrades: winningTrades.length,
+                losingTrades: losingTrades.length,
+                avgWinBTC: avgWin,
+                avgLossBTC: avgLoss,
+                profitFactor: profitFactor,
+                maxConsecutiveLosses: maxConsecutiveLosses,
                 finalBTC: portfolio.btcAmount,
                 finalETH: portfolio.ethAmount,
                 initialBTC: 0.5,

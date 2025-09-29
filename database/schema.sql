@@ -115,6 +115,90 @@ CREATE INDEX IF NOT EXISTS idx_system_events_created_at ON system_events(created
 CREATE INDEX IF NOT EXISTS idx_system_events_event_type ON system_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_performance_snapshots_created_at ON performance_snapshots(created_at);
 
+-- Algorithm Parameters Table
+-- Stores trading algorithm parameters and configurations
+CREATE TABLE IF NOT EXISTS algorithm_parameters (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL, -- e.g., "Optimal Q4 2024", "Conservative", "Aggressive"
+    description TEXT,
+    parameters JSONB NOT NULL, -- All parameters as JSON
+    z_score_threshold DECIMAL(10,6) DEFAULT 1.5,
+    rebalance_percent DECIMAL(10,6) DEFAULT 10.0,
+    transaction_cost DECIMAL(10,6) DEFAULT 1.66,
+    lookback_window INTEGER DEFAULT 15,
+    trade_frequency_minutes INTEGER DEFAULT 720, -- 12 hours default
+    max_allocation_shift DECIMAL(10,6) DEFAULT 0.3,
+    neutral_zone DECIMAL(10,6) DEFAULT 0.5,
+    min_allocation DECIMAL(10,6) DEFAULT 0.25,
+    max_allocation DECIMAL(10,6) DEFAULT 0.75,
+    position_adjustment_factor DECIMAL(10,6) DEFAULT 0.5,
+    profit_take_threshold DECIMAL(10,6) DEFAULT 0.15,
+    rebalance_aggressiveness DECIMAL(10,6) DEFAULT 0.3,
+    backtest_performance JSONB DEFAULT '{}', -- Store backtest results
+    is_active BOOLEAN DEFAULT FALSE, -- Currently active parameters
+    is_default BOOLEAN DEFAULT FALSE, -- System default parameters
+    created_by VARCHAR(100), -- User who created/found these params
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Parameter History Table
+-- Tracks when parameters are activated/deactivated
+CREATE TABLE IF NOT EXISTS parameter_history (
+    id SERIAL PRIMARY KEY,
+    parameter_id INTEGER REFERENCES algorithm_parameters(id),
+    action VARCHAR(50) NOT NULL, -- ACTIVATED, DEACTIVATED, TESTED
+    previous_parameter_id INTEGER REFERENCES algorithm_parameters(id),
+    performance_metrics JSONB DEFAULT '{}',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for algorithm parameters
+CREATE INDEX IF NOT EXISTS idx_algorithm_parameters_is_active ON algorithm_parameters(is_active);
+CREATE INDEX IF NOT EXISTS idx_algorithm_parameters_created_at ON algorithm_parameters(created_at);
+CREATE INDEX IF NOT EXISTS idx_parameter_history_parameter_id ON parameter_history(parameter_id);
+CREATE INDEX IF NOT EXISTS idx_parameter_history_created_at ON parameter_history(created_at);
+
+-- Insert default parameters
+INSERT INTO algorithm_parameters (
+    name,
+    description,
+    parameters,
+    z_score_threshold,
+    rebalance_percent,
+    transaction_cost,
+    lookback_window,
+    trade_frequency_minutes,
+    max_allocation_shift,
+    is_active,
+    is_default,
+    created_by
+) VALUES (
+    'System Default',
+    'Conservative default parameters for safe trading',
+    '{
+        "zScoreThreshold": 1.5,
+        "rebalancePercent": 10.0,
+        "transactionCost": 1.66,
+        "lookbackWindow": 15,
+        "tradeFrequencyMinutes": 720,
+        "maxAllocationShift": 0.3,
+        "neutralZone": 0.5,
+        "minAllocation": 0.25,
+        "maxAllocation": 0.75
+    }'::jsonb,
+    1.5,
+    10.0,
+    1.66,
+    15,
+    720,
+    0.3,
+    TRUE,
+    TRUE,
+    'system'
+) ON CONFLICT DO NOTHING;
+
 -- NOTE: No initial portfolio data inserted
 -- Portfolio balances should come from real wallet/exchange, not database
 -- Database is only for storing trade history, market data, and signals

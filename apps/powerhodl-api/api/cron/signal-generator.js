@@ -4,7 +4,14 @@
  * Executes periodically to generate trading signals based on market conditions.
  * Uses the same SimpleStrategy as backtesting for consistency.
  * 
- * Schedule: Every 5 minutes (H/5 * * * *)
+ * Schedule: Should match tradeFrequencyMinutes parameter
+ * Default: Every 2 hours (0 */2 * * *)
+ * Options:
+ * - Every hour: 0 * * * *
+ * - Every 2 hours: 0 */2 * * * (recommended)
+ * - Every 4 hours: 0 */4 * * *
+ * - Every 6 hours: 0 */6 * * *
+ * - Daily: 0 0 * * *
  */
 
 import { Logger } from '../../lib/utils/Logger.js';
